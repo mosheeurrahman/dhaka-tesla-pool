@@ -27,4 +27,20 @@ const me = asyncHandler(async (req, res) => {
   sendSuccess(res, 200, { user: sanitizeUser(user) }, 'Current user');
 });
 
-module.exports = { passengerSignup, passengerLogin, me };
+const driverSignup = asyncHandler(async (req, res) => {
+  const { user, token } = await authService.signup({
+    ...req.body,
+    role: 'driver',
+  });
+  sendSuccess(res, 201, { user: sanitizeUser(user), token }, 'Signup successful');
+});
+
+const driverLogin = asyncHandler(async (req, res) => {
+  const { user, token } = await authService.login({
+    ...req.body,
+    role: 'driver',
+  });
+  sendSuccess(res, 200, { user: sanitizeUser(user), token }, 'Login successful');
+});
+
+module.exports = { passengerSignup, passengerLogin, driverSignup, driverLogin, me };

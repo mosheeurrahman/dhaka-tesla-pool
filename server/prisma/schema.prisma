@@ -126,12 +126,14 @@ model users {
   is_active           Boolean               @default(true)
   created_at          DateTime              @default(now()) @db.Timestamptz(6)
   updated_at          DateTime              @default(now()) @db.Timestamptz(6)
+  is_online           Boolean               @default(false)
   ride_requests       ride_requests[]
   ride_status_history ride_status_history[]
   vehicles            vehicles[]
 
   @@index([is_active], map: "idx_users_active")
   @@index([role], map: "idx_users_role")
+  @@index([is_online], map: "idx_users_is_online", where: raw("(role = 'driver'::user_role)"))
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
