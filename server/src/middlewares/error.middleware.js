@@ -19,7 +19,9 @@ const KNOWN_TRIGGER_MESSAGE_PATTERNS = [
 ];
 
 function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
-  console.error(err);
+  if (process.env.NODE_ENV !== 'test') {
+    console.error(err);
+  }
 
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
