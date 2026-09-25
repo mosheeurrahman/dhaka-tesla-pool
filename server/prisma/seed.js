@@ -14,7 +14,7 @@ async function main() {
     { code: 'MOHAKHALI', name: 'Mohakhali' },
     { code: 'GULSHAN1', name: 'Gulshan 1' },
     { code: 'GULSHAN2', name: 'Gulshan 2' },
-    { code: 'DHAKA_UNIVERSITY', name: 'Dhaka University' },
+    { code: 'BRACU', name: 'BRAC University' },
     { code: 'DHAHANMANDI', name: 'Dhanmondi' },
     { code: 'UTTARA', name: 'Uttara' },
     { code: 'FARMGATE', name: 'Farmgate' },
@@ -42,6 +42,7 @@ async function main() {
   await prisma.ride_requests.deleteMany({});
   await prisma.vehicles.deleteMany({});
   await prisma.users.deleteMany({});
+  await prisma.zones.deleteMany({ where: { code: 'DHAKA_UNIVERSITY' } });
   console.log('  Cleared previous demo transactional data');
 
   // --- Story cast: driver ---
