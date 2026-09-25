@@ -7,3 +7,12 @@ build/
 *.log
 .DS_Store
 prisma/generated/
+.claude/
+.cursor/
+.agents/
+.devin/
+prisma.config.ts
+.windsurf/
+skills-lock.json
+/package.json
+/package-lock.json

@@ -1,0 +1,217 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model payments {
+  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ride_request_id       String         @unique(map: "payments_ride_unique_idx") @db.Uuid
+  amount_paisa          BigInt
+  method                payment_method
+  status                payment_status @default(pending)
+  transaction_reference String?        @unique(map: "payments_transaction_reference_unique_idx", where: raw("(transaction_reference IS NOT NULL)"))
+  paid_at               DateTime?      @db.Timestamptz(6)
+  created_at            DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime       @default(now()) @db.Timestamptz(6)
+  ride_requests         ride_requests  @relation(fields: [ride_request_id], references: [id], map: "fk_payment_ride")
+
+  @@index([status], map: "idx_payments_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pool_members {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pool_id           String            @db.Uuid
+  ride_request_id   String            @unique(map: "unique_ride_in_pool") @db.Uuid
+  seats_allocated   Int               @db.SmallInt
+  agreed_fare_paisa BigInt
+  status            membership_status @default(active)
+  joined_at         DateTime          @default(now()) @db.Timestamptz(6)
+  cancelled_at      DateTime?         @db.Timestamptz(6)
+  pools             pools             @relation(fields: [pool_id], references: [id], map: "fk_pool_member_pool")
+  ride_requests     ride_requests     @relation(fields: [ride_request_id], references: [id], map: "fk_pool_member_ride")
+
+  @@index([pool_id], map: "idx_pool_members_pool")
+  @@index([status], map: "idx_pool_members_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pools {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vehicle_id        String         @unique(map: "one_active_pool_per_vehicle", where: raw("(status <> ALL (ARRAY['completed'::pool_status, 'cancelled'::pool_status]))")) @db.Uuid
+  capacity_snapshot Int            @db.SmallInt
+  status            pool_status    @default(open)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  accepted_at       DateTime?      @db.Timestamptz(6)
+  driver_arrived_at DateTime?      @db.Timestamptz(6)
+  started_at        DateTime?      @db.Timestamptz(6)
+  completed_at      DateTime?      @db.Timestamptz(6)
+  cancelled_at      DateTime?      @db.Timestamptz(6)
+  updated_at        DateTime       @default(now()) @db.Timestamptz(6)
+  pool_members      pool_members[]
+  vehicles          vehicles       @relation(fields: [vehicle_id], references: [id], map: "fk_pool_vehicle")
+
+  @@index([status], map: "idx_pools_status")
+  @@index([vehicle_id], map: "idx_pools_vehicle")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ride_requests {
+  id                                             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  passenger_id                                   String                @db.Uuid
+  pickup_zone_id                                 String                @db.Uuid
+  destination_zone_id                            String                @db.Uuid
+  seats_requested                                Int                   @default(1) @db.SmallInt
+  estimated_distance_km                          Decimal?              @db.Decimal(7, 2)
+  estimated_fare_paisa                           BigInt                @default(0)
+  final_fare_paisa                               BigInt?
+  status                                         ride_status           @default(requested)
+  requested_at                                   DateTime              @default(now()) @db.Timestamptz(6)
+  matched_at                                     DateTime?             @db.Timestamptz(6)
+  accepted_at                                    DateTime?             @db.Timestamptz(6)
+  driver_arrived_at                              DateTime?             @db.Timestamptz(6)
+  started_at                                     DateTime?             @db.Timestamptz(6)
+  completed_at                                   DateTime?             @db.Timestamptz(6)
+  cancelled_at                                   DateTime?             @db.Timestamptz(6)
+  created_at                                     DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at                                     DateTime              @default(now()) @db.Timestamptz(6)
+  payments                                       payments?
+  pool_members                                   pool_members?
+  zones_ride_requests_destination_zone_idTozones zones                 @relation("ride_requests_destination_zone_idTozones", fields: [destination_zone_id], references: [id], map: "fk_ride_destination_zone")
+  users                                          users                 @relation(fields: [passenger_id], references: [id], map: "fk_ride_passenger")
+  zones_ride_requests_pickup_zone_idTozones      zones                 @relation("ride_requests_pickup_zone_idTozones", fields: [pickup_zone_id], references: [id], map: "fk_ride_pickup_zone")
+  ride_status_history                            ride_status_history[]
+
+  @@index([destination_zone_id], map: "idx_rides_destination")
+  @@index([passenger_id], map: "idx_rides_passenger")
+  @@index([pickup_zone_id], map: "idx_rides_pickup")
+  @@index([requested_at(sort: Desc)], map: "idx_rides_requested_at")
+  @@index([status], map: "idx_rides_status")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ride_status_history {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ride_request_id    String        @db.Uuid
+  status             ride_status
+  changed_by_user_id String?       @db.Uuid
+  note               String?
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  ride_requests      ride_requests @relation(fields: [ride_request_id], references: [id], map: "fk_status_history_ride")
+  users              users?        @relation(fields: [changed_by_user_id], references: [id], map: "fk_status_history_user")
+
+  @@index([created_at(sort: Desc)], map: "idx_status_history_created")
+  @@index([ride_request_id], map: "idx_status_history_ride")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model users {
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  full_name           String
+  email               String
+  phone               String?               @unique(map: "users_phone_unique_idx", where: raw("(phone IS NOT NULL)"))
+  password_hash       String
+  role                user_role
+  is_active           Boolean               @default(true)
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime              @default(now()) @db.Timestamptz(6)
+  ride_requests       ride_requests[]
+  ride_status_history ride_status_history[]
+  vehicles            vehicles[]
+
+  @@index([is_active], map: "idx_users_active")
+  @@index([role], map: "idx_users_role")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model vehicles {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  driver_id    String         @db.Uuid
+  name         String
+  make         String         @default("Tesla")
+  model        String
+  plate_number String
+  capacity     Int            @default(3) @db.SmallInt
+  status       vehicle_status @default(active)
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime       @default(now()) @db.Timestamptz(6)
+  pools        pools?
+  users        users          @relation(fields: [driver_id], references: [id], map: "fk_vehicle_driver")
+
+  @@index([driver_id], map: "idx_vehicles_driver")
+  @@index([status], map: "idx_vehicles_status")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model zones {
+  id                                                     String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                                                   String          @unique
+  name                                                   String          @unique
+  latitude                                               Decimal?        @db.Decimal(9, 6)
+  longitude                                              Decimal?        @db.Decimal(9, 6)
+  is_active                                              Boolean         @default(true)
+  created_at                                             DateTime        @default(now()) @db.Timestamptz(6)
+  ride_requests_ride_requests_destination_zone_idTozones ride_requests[] @relation("ride_requests_destination_zone_idTozones")
+  ride_requests_ride_requests_pickup_zone_idTozones      ride_requests[] @relation("ride_requests_pickup_zone_idTozones")
+}
+
+enum membership_status {
+  active
+  completed
+  cancelled
+}
+
+enum payment_method {
+  cash
+  teslapay
+}
+
+enum payment_status {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum pool_status {
+  open
+  accepted
+  driver_arrived
+  started
+  completed
+  cancelled
+}
+
+enum ride_status {
+  requested
+  matched
+  accepted
+  driver_arrived
+  started
+  completed
+  cancelled
+}
+
+enum user_role {
+  passenger
+  driver
+}
+
+enum vehicle_status {
+  active
+  inactive
+  maintenance
+}
