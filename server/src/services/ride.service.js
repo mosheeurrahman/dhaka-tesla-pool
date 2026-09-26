@@ -68,12 +68,35 @@ async function getRidesForPassenger(passengerId, status) {
   });
 }
 
+
+// First names only of any other active passengers sharing this ride's
+// pool - enough to show "riding with X & Y" without over-exposing data.
+async function getPoolmates(rideId) {
+  const membership = await prisma.pool_members.findFirst({ where: { ride_request_id: rideId } });
+  if (!membership) return [];
+
+  const others = await prisma.pool_members.findMany({
+    where: { pool_id: membership.pool_id, status: 'active', ride_request_id: { not: rideId } },
+  });
+
+  const names = await Promise.all(
+    others.map(async (m) => {
+      const ride = await prisma.ride_requests.findUnique({ where: { id: m.ride_request_id } });
+      const passenger = await prisma.users.findUnique({ where: { id: ride.passenger_id } });
+      return passenger.full_name.split(' ')[0];
+    })
+  );
+
+  return names;
+}
+
 // Enriches a single ride with its payment record (if one exists), so the
 // passenger's "trip detail" screen doesn't need a second round trip.
 async function getRideDetailWithPayment(id, passengerId) {
   const ride = await getRideByIdForPassenger(id, passengerId);
   const payment = await prisma.payments.findUnique({ where: { ride_request_id: id } });
-  return { ride, payment: payment || null };
+  const poolmates = await getPoolmates(id);
+  return { ride, payment: payment || null, poolmates };
 }
 
 async function getRideHistory(id, passengerId) {
@@ -118,6 +141,7 @@ module.exports = {
   createRideRequest,
   getRideByIdForPassenger,
   getRidesForPassenger,
+  getPoolmates,
   getRideDetailWithPayment,
   getRideHistory,
   cancelRide,
