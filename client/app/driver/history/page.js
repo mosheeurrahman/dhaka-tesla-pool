@@ -44,7 +44,7 @@ export default function DriverHistory() {
         )}
 
         {pools.map(({ pool, members }) => (
-          <PoolCard key={pool.id} pool={pool} memberCount={members.length} />
+          <PoolCard key={pool.id} pool={pool} members={members} />
         ))}
       </section>
     </main>

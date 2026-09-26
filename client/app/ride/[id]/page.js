@@ -27,7 +27,7 @@ export default function RideDetail() {
   const fetchRide = useCallback(async () => {
     try {
       const { data } = await api.getRide(id, token);
-      setRide(data.ride);
+      setRide({ ...data.ride, poolmates: data.poolmates });
       setPayment(data.payment);
     } catch (err) {
       setError(err.message);
@@ -93,6 +93,14 @@ export default function RideDetail() {
             {formatPaisa(ride.final_fare_paisa ?? ride.estimated_fare_paisa)}
           </span>
         </div>
+
+        {ride.poolmates?.length > 0 && (
+          <div className="mt-6 border-2 border-dusk-teal/30 bg-cream-dark/30 rounded-2xl p-4 text-center">
+            <p className="font-display font-semibold text-rickshaw-green">
+              You're riding with {ride.poolmates.join(" & ")}!
+            </p>
+          </div>
+        )}
 
         {error && <p className="text-rickshaw-red text-sm mt-4">{error}</p>}
 

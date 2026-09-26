@@ -88,6 +88,22 @@ export default function PoolDetail() {
         </p>
 
         <Seats capacity={pool.capacity_snapshot} members={members} />
+        
+        <div className="mt-4 space-y-2">
+          {members
+            .filter((m) => m.status === "active")
+            .map((m) => (
+              <div
+                key={m.pool_member_id}
+                className="flex justify-between items-center text-sm border-b border-ink/10 pb-2"
+              >
+                <span className="font-body text-ink/80">{m.passenger_name}</span>
+                <span className="font-display font-semibold text-rickshaw-red">
+                  {formatPaisa(m.agreed_fare_paisa)}
+                </span>
+              </div>
+            ))}
+        </div>
 
         <p className="text-ink/70 mt-4">Total fare this trip: {formatPaisa(totalFare)}</p>
 

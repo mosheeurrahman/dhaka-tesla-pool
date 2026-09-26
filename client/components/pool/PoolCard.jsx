@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Avatar from "../ui/Avatar";
 
 const STATUS_STYLE = {
   open: "text-marigold",
@@ -9,7 +10,9 @@ const STATUS_STYLE = {
   cancelled: "text-ink/40",
 };
 
-export default function PoolCard({ pool, memberCount }) {
+export default function PoolCard({ pool, members = [] }) {
+  const activeMembers = members.filter((m) => m.status === "active");
+
   return (
     <Link
       href={`/driver/pools/${pool.id}`}
@@ -18,13 +21,18 @@ export default function PoolCard({ pool, memberCount }) {
       }`}
     >
       <div className="flex justify-between items-center">
-        <div>
-          <p className="font-display font-semibold text-ink">
-            {memberCount} passenger{memberCount !== 1 ? "s" : ""}
-          </p>
-          <p className="text-sm text-ink/60">
-            {new Date(pool.created_at).toLocaleDateString()}
-          </p>
+        <div className="flex items-center gap-2">
+          <div className="flex -space-x-2">
+            {activeMembers.slice(0, 3).map((m) => (
+              <Avatar key={m.pool_member_id} name={m.passenger_name} size="sm" />
+            ))}
+          </div>
+          <div className="ml-2">
+            <p className="font-display font-semibold text-ink">
+              {activeMembers.length} passenger{activeMembers.length !== 1 ? "s" : ""}
+            </p>
+            <p className="text-sm text-ink/60">{new Date(pool.created_at).toLocaleDateString()}</p>
+          </div>
         </div>
         <span className={`text-sm font-semibold capitalize ${STATUS_STYLE[pool.status]}`}>
           {pool.status.replace("_", " ")}
