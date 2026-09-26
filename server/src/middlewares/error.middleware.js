@@ -19,7 +19,12 @@ const KNOWN_TRIGGER_MESSAGE_PATTERNS = [
 ];
 
 function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
-  if (process.env.NODE_ENV !== 'test') {
+  const isExpectedError =
+    err instanceof ApiError ||
+    (err instanceof Prisma.PrismaClientKnownRequestError) ||
+    KNOWN_TRIGGER_MESSAGE_PATTERNS.some((p) => (err?.message || '').includes(p));
+
+  if (!(process.env.NODE_ENV === 'test' && isExpectedError)) {
     console.error(err);
   }
 

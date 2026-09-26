@@ -1,3 +1,11 @@
+// Postgres BIGINT columns (paisa amounts) come back from Prisma as native
+// BigInt values, which JSON.stringify can't serialize by default. This
+// patches BigInt globally so it serializes as a string wherever it shows
+// up in any API response, rather than crashing res.json().
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
