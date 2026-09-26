@@ -40,4 +40,23 @@ export const api = {
   cancelRide: (id, token) => request(`/rides/${id}/cancel`, { method: "PATCH", token }),
 
   createPayment: (body, token) => request("/payments", { method: "POST", body, token }),
+  createVehicle: (body, token) => request("/vehicles", { method: "POST", body, token }),
+  getMyVehicles: (token) => request("/vehicles/me", { token }),
+
+  setDriverStatus: (body, token) => request("/drivers/status", { method: "PATCH", body, token }),
+
+  getAvailableRequests: (token, pickupZoneId) =>
+    request(`/pools/available-requests${pickupZoneId ? `?pickup_zone_id=${pickupZoneId}` : ""}`, { token }),
+  getMyPools: (token, status) =>
+    request(`/pools/mine${status ? `?status=${status}` : ""}`, { token }),
+  getMyPoolsDetailed: (token, status) =>
+    request(`/pools/mine/detailed${status ? `?status=${status}` : ""}`, { token }),
+  createPool: (body, token) => request("/pools", { method: "POST", body, token }),
+  joinPool: (id, body, token) => request(`/pools/${id}/join`, { method: "POST", body, token }),
+  getPool: (id, token) => request(`/pools/${id}`, { token }),
+  acceptPool: (id, token) => request(`/pools/${id}/accept`, { method: "PATCH", token }),
+  markPoolArrived: (id, token) => request(`/pools/${id}/arrived`, { method: "PATCH", token }),
+  startPool: (id, token) => request(`/pools/${id}/start`, { method: "PATCH", token }),
+  completePool: (id, token) => request(`/pools/${id}/complete`, { method: "PATCH", token }),
+  cancelPool: (id, token) => request(`/pools/${id}/cancel`, { method: "PATCH", token }),
 };
