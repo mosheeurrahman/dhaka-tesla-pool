@@ -9,6 +9,7 @@ import { formatPaisa } from "@/lib/rideStatus";
 import Nav from "@/components/layout/Nav";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import RockingBullet from "@/components/motifs/RockingBullet";
 
 export default function DriverDashboard() {
   const { user, loading } = useRequireAuth("driver");
@@ -188,7 +189,10 @@ export default function DriverDashboard() {
         {error && <p className="text-rickshaw-red text-sm mb-4">{error}</p>}
 
         {requests.length === 0 && (
-          <p className="text-center text-ink/50 py-10">Bullet is taking a break. No riders waiting yet.</p>
+          <div className="text-center py-10">
+            <RockingBullet className="w-24 h-24 mx-auto mb-4 opacity-70" />
+            <p className="text-ink/50">Bullet is taking a break. No riders waiting yet.</p>
+          </div>
         )}
 
         {requests.map((r) => (

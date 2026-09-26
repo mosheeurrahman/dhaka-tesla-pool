@@ -1,8 +1,12 @@
+"use client";
+
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Avatar from "../ui/Avatar";
 
 export default function Seats({ capacity, members }) {
   const activeMembers = members.filter((m) => m.status === "active");
   const seatSlots = Array.from({ length: capacity }, (_, i) => activeMembers[i] || null);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div>
@@ -16,17 +20,25 @@ export default function Seats({ capacity, members }) {
                 : "border-dashed border-ink/20 text-ink/30"
             }`}
           >
-            {member ? (
-              <>
-                <Avatar name={member.passenger_name} size="sm" />
-                <span className="text-[10px] font-body text-ink/70">
-                  {member.passenger_name.split(" ")[0]}
-                </span>
-                <span className="text-[9px] text-ink/40">{member.seats_allocated} seat</span>
-              </>
-            ) : (
-              <span className="text-xs">Empty</span>
-            )}
+            <AnimatePresence mode="wait">
+              {member ? (
+                <motion.div
+                  key={member.pool_member_id}
+                  initial={shouldReduceMotion ? false : { scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <Avatar name={member.passenger_name} size="sm" />
+                  <span className="text-[10px] font-body text-ink/70">
+                    {member.passenger_name.split(" ")[0]}
+                  </span>
+                  <span className="text-[9px] text-ink/40">{member.seats_allocated} seat</span>
+                </motion.div>
+              ) : (
+                <span className="text-xs">Empty</span>
+              )}
+            </AnimatePresence>
           </div>
         ))}
       </div>

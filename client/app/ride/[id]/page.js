@@ -9,6 +9,7 @@ import { RIDE_STATUS_LABELS, formatPaisa } from "@/lib/rideStatus";
 import Nav from "@/components/layout/Nav";
 import Button from "@/components/ui/Button";
 import JourneyRoad from "@/components/ride/JourneyRoad";
+import SuccessBurst from "@/components/ui/SuccessBurst";
 
 const TERMINAL_STATUSES = ["completed", "cancelled"];
 const CANCELLABLE = ["requested", "matched", "accepted", "driver_arrived"];
@@ -23,6 +24,7 @@ export default function RideDetail() {
   const [zones, setZones] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [justPaid, setJustPaid] = useState(false);
 
   const fetchRide = useCallback(async () => {
     try {
@@ -65,6 +67,7 @@ export default function RideDetail() {
     try {
       await api.createPayment({ ride_request_id: id, method }, token);
       await fetchRide();
+      setJustPaid(true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -125,9 +128,12 @@ export default function RideDetail() {
         )}
 
         {payment && (
-          <p className="text-center text-rickshaw-green font-semibold mt-6">
-            Paid via {payment.method === "teslapay" ? "TeslaPay" : "cash"} ✓
-          </p>
+          <div className="text-center mt-6">
+            {justPaid && <SuccessBurst />}
+            <p className="text-rickshaw-green font-semibold">
+              Paid via {payment.method === "teslapay" ? "TeslaPay" : "cash"} ✓
+            </p>
+          </div>
         )}
       </section>
     </main>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SearchingOverlay from "@/components/ride/SearchingOverlay";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useAuth } from "@/context/AuthContext";
@@ -23,6 +24,8 @@ export default function RequestRide() {
   const [fareLoading, setFareLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showSearching, setShowSearching] = useState(false);
+  const [createdRideId, setCreatedRideId] = useState(null);
 
   useEffect(() => {
     api.listZones().then(({ data }) => setZones(data.zones));
@@ -47,7 +50,7 @@ export default function RequestRide() {
       .finally(() => setFareLoading(false));
   }, [pickupId, destinationId, seats]);
 
-  async function handleSubmit(e) {
+    async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
@@ -56,10 +59,10 @@ export default function RequestRide() {
         { pickup_zone_id: pickupId, destination_zone_id: destinationId, seats_requested: seats },
         token
       );
-      router.push(`/ride/${data.ride.id}`);
+      setCreatedRideId(data.ride.id);
+      setShowSearching(true);
     } catch (err) {
       setError(err.message);
-    } finally {
       setSubmitting(false);
     }
   }
@@ -148,6 +151,9 @@ export default function RequestRide() {
           </Button>
         </form>
       </section>
+      {showSearching && (
+        <SearchingOverlay onDone={() => router.push(`/ride/${createdRideId}`)} />
+      )}
     </main>
   );
 }

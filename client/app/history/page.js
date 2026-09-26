@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import Nav from "@/components/layout/Nav";
 import RideCard from "@/components/ride/RideCard";
+import RockingBullet from "@/components/motifs/RockingBullet";
 
 export default function RideHistory() {
   const { user, loading } = useRequireAuth("passenger");
@@ -46,9 +47,10 @@ export default function RideHistory() {
         </select>
 
         {rides.length === 0 && (
-          <p className="text-center text-ink/50 py-10">
-            Bullet hasn't taken you anywhere yet. Time to change that.
-          </p>
+          <div className="text-center py-10">
+            <RockingBullet className="w-24 h-24 mx-auto mb-4 opacity-70" />
+            <p className="text-ink/50">Bullet hasn't taken you anywhere yet. Time to change that.</p>
+          </div>
         )}
 
         {rides.map((ride) => (

@@ -1,9 +1,13 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
 import BulletIcon from "../motifs/BulletIcon";
 import { RIDE_STATUS_PROGRESS } from "@/lib/rideStatus";
 
 export default function JourneyRoad({ pickupName, destinationName, status }) {
   const progress = RIDE_STATUS_PROGRESS[status] ?? 0;
   const muted = status === "cancelled";
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div className="w-full py-4">
@@ -12,18 +16,18 @@ export default function JourneyRoad({ pickupName, destinationName, status }) {
         <span>{destinationName || "..."}</span>
       </div>
       <div className="relative h-3 bg-cream-dark rounded-full border-2 border-rickshaw-green/20">
-        <div
-          className={`absolute top-0 left-0 h-full rounded-full transition-all duration-700 ${
-            muted ? "bg-ink/20" : "bg-marigold"
-          }`}
-          style={{ width: `${progress}%` }}
+        <motion.div
+          className={`absolute top-0 left-0 h-full rounded-full ${muted ? "bg-ink/20" : "bg-marigold"}`}
+          animate={{ width: `${progress}%` }}
+          transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 60, damping: 16 }}
         />
-        <div
-          className="absolute -top-4 transition-all duration-700"
-          style={{ left: `calc(${progress}% - 20px)` }}
+        <motion.div
+          className="absolute -top-4"
+          animate={{ left: `calc(${progress}% - 20px)` }}
+          transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 60, damping: 16 }}
         >
           <BulletIcon className={`w-10 h-10 ${muted ? "opacity-40 grayscale" : ""}`} />
-        </div>
+        </motion.div>
       </div>
     </div>
   );
