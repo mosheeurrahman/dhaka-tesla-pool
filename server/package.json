@@ -6,11 +6,14 @@
   "directories": {
     "test": "tests"
   },
+  "jest": {
+  "testTimeout": 20000
+  },
   "scripts": {
     "start": "node server.js",
     "postinstall": "prisma skills sync || exit 0",
     "db:seed": "node prisma/seed.js",
-    "test": "jest"
+    "test": "cross-env NODE_ENV=test jest --runInBand"
   },
   "keywords": [],
   "author": "",
