@@ -1,27 +1,34 @@
 "use client";
 
+import Link from "next/link";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { useAuth } from "@/context/AuthContext";
 import Nav from "@/components/layout/Nav";
-import Button from "@/components/ui/Button";
 
 export default function PassengerDashboard() {
   const { user, loading } = useRequireAuth("passenger");
-  const { logout } = useAuth();
-
   if (loading || !user) return null;
 
   return (
     <main className="min-h-screen">
       <Nav />
-      <section className="max-w-2xl mx-auto px-6 py-12 text-center">
-        <h1 className="font-display text-3xl font-bold text-rickshaw-green mb-2">
+      <section className="max-w-lg mx-auto px-6 py-16 text-center">
+        <h1 className="font-display text-3xl font-bold text-rickshaw-green mb-8">
           Welcome, {user.full_name}
         </h1>
-        <p className="text-ink/70 mb-8">Your ride request screen lands here next.</p>
-        <Button variant="outline" onClick={logout}>
-          Log out
-        </Button>
+        <div className="flex flex-col gap-4">
+          <Link
+            href="/request"
+            className="btn-press bg-rickshaw-red text-cream font-display font-semibold text-lg rounded-full py-4"
+          >
+            Find My Tesla
+          </Link>
+          <Link
+            href="/history"
+            className="btn-press border-2 border-rickshaw-green text-rickshaw-green font-display font-semibold text-lg rounded-full py-4"
+          >
+            Your Journeys
+          </Link>
+        </div>
       </section>
     </main>
   );
