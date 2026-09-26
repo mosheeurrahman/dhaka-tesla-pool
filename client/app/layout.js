@@ -1,5 +1,6 @@
 import { Baloo_2, Inter } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
+import Footer from "@/components/layout/Footer";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -22,8 +23,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${baloo.variable} ${inter.variable}`}>
-      <body>
-        <AuthProvider>{children}</AuthProvider>
+      <body className="flex flex-col min-h-screen">
+        <AuthProvider>
+          <div className="flex-1">{children}</div>
+        </AuthProvider>
+        <Footer />
       </body>
     </html>
   );
