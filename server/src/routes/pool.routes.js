@@ -6,6 +6,7 @@ const {
   joinPoolSchema,
   poolIdParamSchema,
   availableRequestsQuerySchema,
+  poolHistoryQuerySchema,
 } = require('../validators/pool.schema');
 const controller = require('../controllers/pool.controller');
 
@@ -19,8 +20,8 @@ router.get(
   validate(availableRequestsQuerySchema),
   controller.getAvailableRequests
 );
-router.get('/mine', controller.getMyPools);
-router.get('/mine/detailed', controller.getMyPoolsDetailed);
+router.get('/mine', validate(poolHistoryQuerySchema), controller.getMyPools);
+router.get('/mine/detailed', validate(poolHistoryQuerySchema), controller.getMyPoolsDetailed);
 
 router.post('/', validate(createPoolSchema), controller.createPool);
 router.post('/:id/join', validate(joinPoolSchema), controller.joinPool);

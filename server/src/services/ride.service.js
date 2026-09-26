@@ -58,11 +58,22 @@ async function getRideByIdForPassenger(id, passengerId) {
   return ride;
 }
 
-async function getRidesForPassenger(passengerId) {
+async function getRidesForPassenger(passengerId, status) {
   return prisma.ride_requests.findMany({
-    where: { passenger_id: passengerId },
+    where: {
+      passenger_id: passengerId,
+      ...(status ? { status } : {}),
+    },
     orderBy: { requested_at: 'desc' },
   });
+}
+
+// Enriches a single ride with its payment record (if one exists), so the
+// passenger's "trip detail" screen doesn't need a second round trip.
+async function getRideDetailWithPayment(id, passengerId) {
+  const ride = await getRideByIdForPassenger(id, passengerId);
+  const payment = await prisma.payments.findUnique({ where: { ride_request_id: id } });
+  return { ride, payment: payment || null };
 }
 
 async function getRideHistory(id, passengerId) {
@@ -107,6 +118,7 @@ module.exports = {
   createRideRequest,
   getRideByIdForPassenger,
   getRidesForPassenger,
+  getRideDetailWithPayment,
   getRideHistory,
   cancelRide,
 };

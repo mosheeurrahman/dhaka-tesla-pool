@@ -180,12 +180,15 @@ async function listAvailableRequests(pickupZoneId) {
   });
 }
 
-async function listPoolsForDriver(driverId) {
+async function listPoolsForDriver(driverId, status) {
   const vehicles = await prisma.vehicles.findMany({ where: { driver_id: driverId } });
   const vehicleIds = vehicles.map((v) => v.id);
   if (!vehicleIds.length) return [];
   return prisma.pools.findMany({
-    where: { vehicle_id: { in: vehicleIds } },
+    where: {
+      vehicle_id: { in: vehicleIds },
+      ...(status ? { status } : {}),
+    },
     orderBy: { created_at: 'desc' },
   });
 }
@@ -215,8 +218,8 @@ async function getPoolDetail(driverId, poolId) {
   return { pool, members: memberDetails };
 }
 
-async function listPoolsForDriverDetailed(driverId) {
-  const pools = await listPoolsForDriver(driverId);
+async function listPoolsForDriverDetailed(driverId, status) {
+  const pools = await listPoolsForDriver(driverId, status);
   return Promise.all(pools.map((p) => getPoolDetail(driverId, p.id)));
 }
 

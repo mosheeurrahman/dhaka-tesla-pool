@@ -12,4 +12,12 @@ const rideIdParamSchema = z.object({
   params: z.object({ id: z.string().uuid() }),
 });
 
-module.exports = { createRideSchema, rideIdParamSchema };
+const rideHistoryQuerySchema = z.object({
+  query: z.object({
+    status: z
+      .enum(['requested', 'matched', 'accepted', 'driver_arrived', 'started', 'completed', 'cancelled'])
+      .optional(),
+  }),
+});
+
+module.exports = { createRideSchema, rideIdParamSchema, rideHistoryQuerySchema};

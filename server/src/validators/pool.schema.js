@@ -26,9 +26,18 @@ const availableRequestsQuerySchema = z.object({
   }),
 });
 
+const poolHistoryQuerySchema = z.object({
+  query: z.object({
+    status: z
+      .enum(['open', 'accepted', 'driver_arrived', 'started', 'completed', 'cancelled'])
+      .optional(),
+  }),
+});
+
 module.exports = {
   createPoolSchema,
   joinPoolSchema,
   poolIdParamSchema,
   availableRequestsQuerySchema,
+  poolHistoryQuerySchema,
 };

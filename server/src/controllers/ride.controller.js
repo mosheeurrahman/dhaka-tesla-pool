@@ -8,13 +8,13 @@ const createRide = asyncHandler(async (req, res) => {
 });
 
 const getMyRides = asyncHandler(async (req, res) => {
-  const rides = await rideService.getRidesForPassenger(req.user.id);
+  const rides = await rideService.getRidesForPassenger(req.user.id, req.query.status);
   sendSuccess(res, 200, { rides }, 'Your ride history');
 });
 
 const getRideById = asyncHandler(async (req, res) => {
-  const ride = await rideService.getRideByIdForPassenger(req.params.id, req.user.id);
-  sendSuccess(res, 200, { ride }, 'Ride detail');
+  const detail = await rideService.getRideDetailWithPayment(req.params.id, req.user.id);
+  sendSuccess(res, 200, detail, 'Ride detail');
 });
 
 const getRideHistory = asyncHandler(async (req, res) => {

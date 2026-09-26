@@ -18,7 +18,7 @@ const joinPool = asyncHandler(async (req, res) => {
 });
 
 const getMyPools = asyncHandler(async (req, res) => {
-  const pools = await poolService.listPoolsForDriver(req.user.id);
+  const pools = await poolService.listPoolsForDriver(req.user.id, req.query.status);
   sendSuccess(res, 200, { pools }, 'Your pools');
 });
 
@@ -53,7 +53,7 @@ const cancelPool = asyncHandler(async (req, res) => {
 });
 
 const getMyPoolsDetailed = asyncHandler(async (req, res) => {
-  const pools = await poolService.listPoolsForDriverDetailed(req.user.id);
+  const pools = await poolService.listPoolsForDriverDetailed(req.user.id, req.query.status);
   sendSuccess(res, 200, { pools }, 'Your pools with passenger detail');
 });
 
