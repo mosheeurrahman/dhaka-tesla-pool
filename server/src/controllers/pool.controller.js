@@ -52,6 +52,11 @@ const cancelPool = asyncHandler(async (req, res) => {
   sendSuccess(res, 200, { pool }, 'Pool cancelled');
 });
 
+const getMyPoolsDetailed = asyncHandler(async (req, res) => {
+  const pools = await poolService.listPoolsForDriverDetailed(req.user.id);
+  sendSuccess(res, 200, { pools }, 'Your pools with passenger detail');
+});
+
 module.exports = {
   getAvailableRequests,
   createPool,
@@ -63,4 +68,5 @@ module.exports = {
   startPool,
   completePool,
   cancelPool,
+  getMyPoolsDetailed,
 };

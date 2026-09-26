@@ -20,6 +20,7 @@ router.get(
   controller.getAvailableRequests
 );
 router.get('/mine', controller.getMyPools);
+router.get('/mine/detailed', controller.getMyPoolsDetailed);
 
 router.post('/', validate(createPoolSchema), controller.createPool);
 router.post('/:id/join', validate(joinPoolSchema), controller.joinPool);

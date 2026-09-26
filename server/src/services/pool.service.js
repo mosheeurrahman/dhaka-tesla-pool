@@ -215,6 +215,11 @@ async function getPoolDetail(driverId, poolId) {
   return { pool, members: memberDetails };
 }
 
+async function listPoolsForDriverDetailed(driverId) {
+  const pools = await listPoolsForDriver(driverId);
+  return Promise.all(pools.map((p) => getPoolDetail(driverId, p.id)));
+}
+
 module.exports = {
   createPool,
   joinPool,
@@ -225,5 +230,6 @@ module.exports = {
   cancelPool,
   listAvailableRequests,
   listPoolsForDriver,
+  listPoolsForDriverDetailed,
   getPoolDetail,
 };
