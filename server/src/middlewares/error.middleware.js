@@ -18,60 +18,58 @@ const KNOWN_TRIGGER_MESSAGE_PATTERNS = [
   'Pool does not exist',
 ];
 
-function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
-  const isExpectedError =
-    err instanceof ApiError ||
-    (err instanceof Prisma.PrismaClientKnownRequestError) ||
-    KNOWN_TRIGGER_MESSAGE_PATTERNS.some((p) => (err?.message || '').includes(p));
+function extractRawMessage(err) {
+  const directMessage = err?.message || '';
+  const adapterMessage = err?.meta?.driverAdapterError?.message || '';
+  return `${directMessage}\n${adapterMessage}`;
+}
 
-  if (!(process.env.NODE_ENV === 'test' && isExpectedError)) {
+function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
+  let statusCode = 500;
+  let payload = { success: false, message: 'Something went wrong on our end' };
+
+  if (err instanceof ApiError) {
+    statusCode = err.statusCode;
+    payload = { success: false, message: err.message, errors: err.details || undefined };
+  } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === 'P2002') {
+      statusCode = 409;
+      payload = {
+        success: false,
+        message: `A record with this ${err.meta?.target || 'value'} already exists`,
+      };
+    } else if (err.code === 'P2003') {
+      statusCode = 400;
+      payload = { success: false, message: 'Related record not found (invalid reference)' };
+    } else if (err.code === 'P2025') {
+      statusCode = 404;
+      payload = { success: false, message: 'Record not found' };
+    }
+    // Other Prisma codes (like P2039, a generic raw-DB-error wrapper)
+    // fall through to the trigger-message check below rather than
+    // being left at a blind 500.
+  }
+
+  // Universal fallback: regardless of how Prisma wrapped the error, if
+  // its message - including any nested driver-adapter message - matches
+  // one of our own trigger RAISE EXCEPTION strings, this is a business
+  // rule violation, not a server bug.
+  if (statusCode === 500) {
+    const rawMessage = extractRawMessage(err);
+    const matched = KNOWN_TRIGGER_MESSAGE_PATTERNS.find((p) => rawMessage.includes(p));
+    if (matched) {
+      statusCode = 400;
+      const cleanLine = rawMessage.split('\n').find((line) => line.includes(matched)) || matched;
+      payload = { success: false, message: cleanLine.trim() };
+    }
+  }
+
+  const isHandledCleanly = statusCode !== 500;
+  if (!(process.env.NODE_ENV === 'test' && isHandledCleanly)) {
     console.error(err);
   }
 
-  if (err instanceof ApiError) {
-    return res.status(err.statusCode).json({
-      success: false,
-      message: err.message,
-      errors: err.details || undefined,
-    });
-  }
-
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === 'P2002') {
-      return res.status(409).json({
-        success: false,
-        message: `A record with this ${err.meta?.target || 'value'} already exists`,
-      });
-    }
-    if (err.code === 'P2003') {
-      return res.status(400).json({
-        success: false,
-        message: 'Related record not found (invalid reference)',
-      });
-    }
-    if (err.code === 'P2025') {
-      return res.status(404).json({
-        success: false,
-        message: 'Record not found',
-      });
-    }
-  }
-
-  const rawMessage = err?.message || '';
-  const matched = KNOWN_TRIGGER_MESSAGE_PATTERNS.find((p) => rawMessage.includes(p));
-  if (matched) {
-    const cleanLine =
-      rawMessage.split('\n').find((line) => line.includes(matched)) || matched;
-    return res.status(400).json({
-      success: false,
-      message: cleanLine.trim(),
-    });
-  }
-
-  return res.status(500).json({
-    success: false,
-    message: 'Something went wrong on our end',
-  });
+  return res.status(statusCode).json(payload);
 }
 
 module.exports = errorHandler;
