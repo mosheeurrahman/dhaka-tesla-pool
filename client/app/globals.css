@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #F6EFDC;
+  --color-cream-dark: #EDE3C8;
+  --color-rickshaw-green: #1E5C3F;
+  --color-rickshaw-green-dark: #143F2B;
+  --color-rickshaw-red: #C8283A;
+  --color-rickshaw-red-dark: #A31E2D;
+  --color-marigold: #EFA324;
+  --color-dusk-teal: #4E9C90;
+  --color-ink: #2B2118;
+
+  --font-display: var(--font-baloo), ui-rounded, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Tactile press response for primary actions - see Buttons section of the brief */
+.btn-press {
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.btn-press:hover {
+  transform: translateY(-2px);
+}
+.btn-press:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-press,
+  .btn-press:hover,
+  .btn-press:active {
+    transform: none;
+    transition: none;
+  }
+}
