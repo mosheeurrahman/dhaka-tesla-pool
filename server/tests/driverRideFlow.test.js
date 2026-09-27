@@ -5,7 +5,7 @@ const prisma = require('../src/config/db');
 const DRIVER_EMAIL = 'test.driverflow.driver@dhakateslapool.test';
 const PASSENGER_A_EMAIL = 'test.driverflow.passengerA@dhakateslapool.test';
 const PASSENGER_B_EMAIL = 'test.driverflow.passengerB@dhakateslapool.test';
-const PASSWORD = 'password123';
+const PASSWORD = 'oi_mama_jaben@123';
 const PLATE = 'TEST-FLOW-01';
 
 let driverToken, passengerAToken, passengerBToken;

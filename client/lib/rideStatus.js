@@ -22,3 +22,21 @@ export function formatPaisa(paisa) {
   const taka = Number(paisa) / 100;
   return `৳${taka.toFixed(2)}`;
 }
+
+export const POOL_STATUS_LABELS = {
+  open: "Waiting for more passengers...",
+  accepted: "Tesla found! Getting ready...",
+  driver_arrived: "Driver has arrived",
+  started: "On the way",
+  completed: "Trip completed!",
+  cancelled: "Pool cancelled",
+};
+
+export const POOL_STATUS_PROGRESS = {
+  open: 10,
+  accepted: 40,
+  driver_arrived: 60,
+  started: 85,
+  completed: 100,
+  cancelled: 0,
+};

@@ -5,7 +5,7 @@ const prisma = require('../src/config/db');
 const DRIVER_ONE_EMAIL = 'test.vehicle.driver1@dhakateslapool.test';
 const DRIVER_TWO_EMAIL = 'test.vehicle.driver2@dhakateslapool.test';
 const PASSENGER_EMAIL = 'test.vehicle.passenger@dhakateslapool.test';
-const PASSWORD = 'password123';
+const PASSWORD = 'oi_mama_jaben@123';
 const PLATE = 'TEST-BULLET-99';
 
 async function cleanup() {

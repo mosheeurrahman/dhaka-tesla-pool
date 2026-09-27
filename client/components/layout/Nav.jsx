@@ -10,6 +10,7 @@ export default function Nav() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const isDriverSection = pathname?.startsWith("/driver");
+  const isSignupPage = pathname === "/signup" || pathname === "/driver/signup";
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto gap-4">
@@ -26,9 +27,7 @@ export default function Nav() {
             <Link
               href="/login"
               className={`px-4 py-1.5 rounded-full text-sm font-display font-semibold transition-colors ${
-                !isDriverSection
-                  ? "bg-rickshaw-green text-cream"
-                  : "text-ink/60 hover:text-rickshaw-green"
+                !isDriverSection ? "bg-rickshaw-green text-cream" : "text-ink/60 hover:text-rickshaw-green"
               }`}
             >
               Passenger
@@ -36,9 +35,7 @@ export default function Nav() {
             <Link
               href="/driver/login"
               className={`px-4 py-1.5 rounded-full text-sm font-display font-semibold transition-colors ${
-                isDriverSection
-                  ? "bg-rickshaw-red text-cream"
-                  : "text-ink/60 hover:text-rickshaw-red"
+                isDriverSection ? "bg-rickshaw-red text-cream" : "text-ink/60 hover:text-rickshaw-red"
               }`}
             >
               Driver
@@ -48,7 +45,13 @@ export default function Nav() {
 
         {user ? (
           <>
-            <span className="font-body text-ink/70 hidden sm:inline">Hi, {user.full_name}</span>
+            <Link
+              href={user.role === "driver" ? "/driver/dashboard" : "/dashboard"}
+              className="font-body text-ink hover:text-rickshaw-green transition-colors hidden sm:inline"
+            >
+              Dashboard
+            </Link>
+            <span className="font-body text-ink/70 hidden md:inline">Hi, {user.full_name}</span>
             <button
               onClick={logout}
               className="btn-press bg-rickshaw-green text-cream px-4 py-2 rounded-full font-display font-semibold"
@@ -57,13 +60,15 @@ export default function Nav() {
             </button>
           </>
         ) : (
-          <Link
-            href={isDriverSection ? "/driver/signup" : "/signup"}
-            className="btn-press flex items-center gap-2 bg-rickshaw-red text-cream px-4 py-2 rounded-full font-display font-semibold whitespace-nowrap"
-          >
-            <Wheel className="w-4 h-4" color="var(--color-cream)" />
-            Get a Tesla
-          </Link>
+          !isSignupPage && (
+            <Link
+              href={isDriverSection ? "/driver/signup" : "/signup"}
+              className="btn-press flex items-center gap-2 bg-rickshaw-red text-cream px-4 py-2 rounded-full font-display font-semibold whitespace-nowrap"
+            >
+              <Wheel className="w-4 h-4" color="var(--color-cream)" />
+              Get a Tesla
+            </Link>
+          )
         )}
       </div>
     </nav>

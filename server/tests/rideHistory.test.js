@@ -4,7 +4,7 @@ const prisma = require('../src/config/db');
 
 const PASSENGER_EMAIL = 'test.history.passenger@dhakateslapool.test';
 const DRIVER_EMAIL = 'test.history.driver@dhakateslapool.test';
-const PASSWORD = 'password123';
+const PASSWORD = 'oi_mama_jaben@123';
 const PLATE = 'TEST-HIST-01';
 
 let passengerToken, driverToken;

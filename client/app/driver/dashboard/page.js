@@ -9,7 +9,9 @@ import { formatPaisa } from "@/lib/rideStatus";
 import Nav from "@/components/layout/Nav";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import RockingBullet from "@/components/motifs/RockingBullet";
+import Link from "next/link";
+
+const NON_TERMINAL = (status) => !["completed", "cancelled"].includes(status);
 
 export default function DriverDashboard() {
   const { user, loading } = useRequireAuth("driver");
@@ -19,21 +21,24 @@ export default function DriverDashboard() {
   const [vehicle, setVehicle] = useState(null);
   const [vehicleForm, setVehicleForm] = useState({ name: "Bullet", model: "", plate_number: "" });
   const [isOnline, setIsOnline] = useState(false);
-  const [openPool, setOpenPool] = useState(null);
+  const [activePool, setActivePool] = useState(null);
   const [zones, setZones] = useState([]);
   const [requests, setRequests] = useState([]);
   const [zoneFilter, setZoneFilter] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const zoneName = (id) => zones.find((z) => z.id === id)?.name || "...";
+
   const refresh = useCallback(async () => {
     if (!token) return;
-    const [{ data: vehicleData }, { data: openPoolData }] = await Promise.all([
+    const [{ data: vehicleData }, { data: poolsData }] = await Promise.all([
       api.getMyVehicles(token),
-      api.getMyPools(token, "open"),
+      api.getMyPools(token),
     ]);
     setVehicle(vehicleData.vehicles[0] || null);
-    setOpenPool(openPoolData.pools[0] || null);
+    setActivePool(poolsData.pools.find((p) => NON_TERMINAL(p.status)) || null);
   }, [token]);
 
   useEffect(() => {
@@ -45,7 +50,7 @@ export default function DriverDashboard() {
   useEffect(() => {
     if (!token) return;
     api.getAvailableRequests(token, zoneFilter || undefined).then(({ data }) => setRequests(data.requests));
-  }, [token, zoneFilter, openPool]);
+  }, [token, zoneFilter, activePool]);
 
   async function handleCreateVehicle(e) {
     e.preventDefault();
@@ -78,13 +83,11 @@ export default function DriverDashboard() {
     setBusy(true);
     setError("");
     try {
-      const { data } = await api.createPool(
-        { vehicle_id: vehicle.id, ride_request_id: rideId },
-        token
-      );
+      const { data } = await api.createPool({ vehicle_id: vehicle.id, ride_request_id: rideId }, token);
       router.push(`/driver/pools/${data.pool.id}`);
     } catch (err) {
       setError(err.message);
+      await refresh();
     } finally {
       setBusy(false);
     }
@@ -94,8 +97,8 @@ export default function DriverDashboard() {
     setBusy(true);
     setError("");
     try {
-      await api.joinPool(openPool.id, { ride_request_id: rideId }, token);
-      router.push(`/driver/pools/${openPool.id}`);
+      await api.joinPool(activePool.id, { ride_request_id: rideId }, token);
+      router.push(`/driver/pools/${activePool.id}`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -114,24 +117,9 @@ export default function DriverDashboard() {
             Register your Tesla first
           </h1>
           <form onSubmit={handleCreateVehicle} className="space-y-4">
-            <Input
-              label="Vehicle name"
-              required
-              value={vehicleForm.name}
-              onChange={(e) => setVehicleForm({ ...vehicleForm, name: e.target.value })}
-            />
-            <Input
-              label="Model"
-              required
-              value={vehicleForm.model}
-              onChange={(e) => setVehicleForm({ ...vehicleForm, model: e.target.value })}
-            />
-            <Input
-              label="Plate number"
-              required
-              value={vehicleForm.plate_number}
-              onChange={(e) => setVehicleForm({ ...vehicleForm, plate_number: e.target.value })}
-            />
+            <Input label="Vehicle name" required value={vehicleForm.name} onChange={(e) => setVehicleForm({ ...vehicleForm, name: e.target.value })} />
+            <Input label="Model" required value={vehicleForm.model} onChange={(e) => setVehicleForm({ ...vehicleForm, model: e.target.value })} />
+            <Input label="Plate number" required value={vehicleForm.plate_number} onChange={(e) => setVehicleForm({ ...vehicleForm, plate_number: e.target.value })} />
             {error && <p className="text-rickshaw-red text-sm">{error}</p>}
             <Button type="submit" variant="secondary" className="w-full" disabled={busy}>
               Register Vehicle
@@ -142,15 +130,16 @@ export default function DriverDashboard() {
     );
   }
 
+  const canStartNew = !activePool;
+  const canJoinExisting = activePool?.status === "open";
+
   return (
     <main className="min-h-screen">
       <Nav />
       <section className="max-w-2xl mx-auto px-6 py-10">
         <div className="text-center mb-8">
           <h1 className="font-display text-3xl font-bold text-rickshaw-green">{vehicle.name}</h1>
-          <p className="text-ink/60">
-            {vehicle.model} · {vehicle.capacity} seats
-          </p>
+          <p className="text-ink/60">{vehicle.model} · {vehicle.capacity} seats</p>
           <button
             onClick={toggleOnline}
             disabled={busy}
@@ -162,12 +151,19 @@ export default function DriverDashboard() {
           </button>
         </div>
 
-        {openPool && (
+        {activePool && (
           <div className="border-2 border-marigold/40 rounded-2xl p-4 mb-6 text-center">
-            <p className="font-display font-semibold mb-2">You have an open pool</p>
-            <a href={`/driver/pools/${openPool.id}`} className="text-rickshaw-green font-semibold underline">
+            <p className="font-display font-semibold mb-2 capitalize">
+              Active pool — {activePool.status.replace("_", " ")}
+            </p>
+            <Link href={`/driver/pools/${activePool.id}`} className="text-rickshaw-green font-semibold underline">
               View pool
-            </a>
+            </Link>
+            {!canJoinExisting && (
+              <p className="text-sm text-ink/50 mt-2">
+                Finish or cancel this pool before starting a new one.
+              </p>
+            )}
           </div>
         )}
 
@@ -180,36 +176,59 @@ export default function DriverDashboard() {
         >
           <option value="">All pickup zones</option>
           {zones.map((z) => (
-            <option key={z.id} value={z.id}>
-              {z.name}
-            </option>
+            <option key={z.id} value={z.id}>{z.name}</option>
           ))}
         </select>
 
         {error && <p className="text-rickshaw-red text-sm mb-4">{error}</p>}
 
         {requests.length === 0 && (
-          <div className="text-center py-10">
-            <RockingBullet className="w-24 h-24 mx-auto mb-4 opacity-70" />
-            <p className="text-ink/50">Bullet is taking a break. No riders waiting yet.</p>
-          </div>
+          <p className="text-center text-ink/50 py-10">Bullet is taking a break. No riders waiting yet.</p>
         )}
 
-        {requests.map((r) => (
-          <div key={r.id} className="border-2 border-rickshaw-green/20 rounded-2xl p-4 mb-3 flex justify-between items-center">
-            <div>
-              <p className="font-display font-semibold">{r.seats_requested} seat(s) requested</p>
-              <p className="text-sm text-ink/60">{formatPaisa(r.estimated_fare_paisa)}</p>
+        {requests.map((r) => {
+          const expanded = expandedId === r.id;
+          const canAct = canStartNew || canJoinExisting;
+          return (
+            <div key={r.id} className="border-2 border-rickshaw-green/20 rounded-2xl p-4 mb-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-display font-semibold">
+                    {zoneName(r.pickup_zone_id)} → {zoneName(r.destination_zone_id)}
+                  </p>
+                  <p className="text-sm text-ink/60">{formatPaisa(r.estimated_fare_paisa)}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setExpandedId(expanded ? null : r.id)}
+                  >
+                    {expanded ? "Hide" : "View"}
+                  </Button>
+                  {canAct && (
+                    <Button
+                      variant={canJoinExisting ? "secondary" : "primary"}
+                      disabled={busy}
+                      onClick={() => (canJoinExisting ? handleJoinPool(r.id) : handleStartPool(r.id))}
+                    >
+                      {canJoinExisting ? "Add to Pool" : "Start Pool"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {expanded && (
+                <div className="mt-3 pt-3 border-t border-ink/10 text-sm text-ink/70 space-y-1">
+                  <p>Pickup: {zoneName(r.pickup_zone_id)}</p>
+                  <p>Destination: {zoneName(r.destination_zone_id)}</p>
+                  <p>Seats requested: {r.seats_requested}</p>
+                  <p>Distance: {r.estimated_distance_km} km</p>
+                  <p>Requested: {new Date(r.requested_at).toLocaleString()}</p>
+                </div>
+              )}
             </div>
-            <Button
-              variant={openPool ? "secondary" : "primary"}
-              disabled={busy}
-              onClick={() => (openPool ? handleJoinPool(r.id) : handleStartPool(r.id))}
-            >
-              {openPool ? "Add to Pool" : "Start Pool"}
-            </Button>
-          </div>
-        ))}
+          );
+        })}
       </section>
     </main>
   );

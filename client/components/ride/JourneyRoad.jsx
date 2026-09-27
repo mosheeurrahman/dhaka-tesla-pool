@@ -2,18 +2,15 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import BulletIcon from "../motifs/BulletIcon";
-import { RIDE_STATUS_PROGRESS } from "@/lib/rideStatus";
 
-export default function JourneyRoad({ pickupName, destinationName, status }) {
-  const progress = RIDE_STATUS_PROGRESS[status] ?? 0;
-  const muted = status === "cancelled";
+export default function JourneyRoad({ pickupName, destinationName, progress = 0, muted = false }) {
   const shouldReduceMotion = useReducedMotion();
 
   return (
     <div className="w-full py-4">
       <div className="flex justify-between font-display font-semibold text-rickshaw-green mb-3">
         <span>{pickupName || "..."}</span>
-        <span>{destinationName || "..."}</span>
+        <span className="text-right">{destinationName || "..."}</span>
       </div>
       <div className="relative h-3 bg-cream-dark rounded-full border-2 border-rickshaw-green/20">
         <motion.div

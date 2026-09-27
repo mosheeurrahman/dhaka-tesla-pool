@@ -8,7 +8,7 @@ const PASSENGER_A_EMAIL = 'test.pool.passengerA@dhakateslapool.test';
 const PASSENGER_B_EMAIL = 'test.pool.passengerB@dhakateslapool.test';
 const PASSENGER_C_EMAIL = 'test.pool.passengerC@dhakateslapool.test';
 const PASSENGER_D_EMAIL = 'test.pool.passengerD@dhakateslapool.test';
-const PASSWORD = 'password123';
+const PASSWORD = 'oi_mama_jaben@123';
 const PLATE = 'TEST-POOL-01';
 
 let driverToken, otherDriverToken;

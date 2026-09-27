@@ -1,10 +1,22 @@
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 import Nav from "@/components/layout/Nav";
-import Button from "@/components/ui/Button";
 import Vine from "@/components/motifs/Vine";
 import Flower from "@/components/motifs/Flower";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
+  let ctaLabel = "Find My Tesla";
+  let ctaHref = "/signup";
+  if (!loading && user) {
+    ctaLabel = "Go to Dashboard";
+    ctaHref = user.role === "driver" ? "/driver/dashboard" : "/dashboard";
+  }
+
   return (
     <main className="min-h-screen">
       <Nav />
@@ -41,9 +53,12 @@ export default function Home() {
           Share a seat with Bullet. Split the fare. Skip the traffic stress.
         </p>
 
-        <Button variant="primary" className="text-lg px-8 py-4">
-          Find My Tesla
-        </Button>
+        <Link
+          href={ctaHref}
+          className="btn-press inline-block bg-rickshaw-red text-cream font-display font-semibold text-lg px-8 py-4 rounded-full shadow-md"
+        >
+          {ctaLabel}
+        </Link>
       </section>
     </main>
   );

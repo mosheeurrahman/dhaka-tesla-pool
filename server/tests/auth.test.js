@@ -3,7 +3,7 @@ const app = require('../src/app');
 const prisma = require('../src/config/db');
 
 const TEST_EMAIL = 'test.passenger.auth@dhakateslapool.test';
-const TEST_PASSWORD = 'password123';
+const TEST_PASSWORD = 'oi_mama_jaben@123';
 
 async function cleanup() {
   await prisma.users.deleteMany({ where: { email: TEST_EMAIL } });

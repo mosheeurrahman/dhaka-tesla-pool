@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../src/config/db');
 
-const DEMO_PASSWORD = 'password123';
+const DEMO_PASSWORD = 'oi_mama_jaben@123';
 
 async function main() {
   console.log('Seeding Dhaka Tesla Pool demo data...');
@@ -45,12 +45,22 @@ async function main() {
   await prisma.zones.deleteMany({ where: { code: 'DHAKA_UNIVERSITY' } });
   console.log('  Cleared previous demo transactional data');
 
-  // --- Story cast: driver ---
+  // --- Story cast: drivers ---
   const jashim = await prisma.users.create({
     data: {
       full_name: 'Jashim Uddin',
       email: 'jashim@dhakateslapool.test',
       phone: '+8801710000001',
+      password_hash: passwordHash,
+      role: 'driver',
+    },
+  });
+
+  const kuddus = await prisma.users.create({
+    data: {
+      full_name: 'Kuddus',
+      email: 'kuddus@dhakateslapool.test',
+      phone: '+8801710000006',
       password_hash: passwordHash,
       role: 'driver',
     },
@@ -87,50 +97,37 @@ async function main() {
     },
   });
 
-  console.log('  Users ready: Jashim (driver), Nusrat, Rafiq, Shirin (passengers)');
-
-  // --- Jashim's Tesla ---
-  const bullet = await prisma.vehicles.create({
+  const mosheeur = await prisma.users.create({
     data: {
-      driver_id: jashim.id,
-      name: 'Bullet',
-      make: 'Tesla',
-      model: 'Model 3 (unofficial)',
-      plate_number: 'DHAKA-TESLA-01',
-      capacity: 3,
-      status: 'active',
-    },
-  });
-  console.log(`  Vehicle ready: ${bullet.name} (capacity ${bullet.capacity})`);
-
-  // --- Sample ride requests matching the brief's Banani rush-hour story ---
-  // Nusrat: Banani -> Mohakhali
-  const nusratRide = await prisma.ride_requests.create({
-    data: {
-      passenger_id: nusrat.id,
-      pickup_zone_id: zones.BANANI.id,
-      destination_zone_id: zones.MOHAKHALI.id,
-      seats_requested: 1,
-      estimated_distance_km: 3.2,
-      estimated_fare_paisa: 8000, // 80.00 BDT, in paisa
-      status: 'requested',
+      full_name: 'Moshee-Ur',
+      email: 'mosheeur@dhakateslapool.test',
+      phone: '+8801710000007',
+      password_hash: passwordHash,
+      role: 'passenger',
     },
   });
 
-  // Rafiq: Banani -> Gulshan 1 (overlapping-but-not-identical route)
-  const rafiqRide = await prisma.ride_requests.create({
+  const mehek = await prisma.users.create({
     data: {
-      passenger_id: rafiq.id,
-      pickup_zone_id: zones.BANANI.id,
-      destination_zone_id: zones.GULSHAN1.id,
-      seats_requested: 1,
-      estimated_distance_km: 2.1,
-      estimated_fare_paisa: 6000, // 60.00 BDT, in paisa
-      status: 'requested',
+      full_name: 'Mehek',
+      email: 'mehek@dhakateslapool.test',
+      phone: '+8801710000008',
+      password_hash: passwordHash,
+      role: 'passenger',
     },
   });
 
-  console.log('  Ride requests ready: Nusrat (Banani->Mohakhali), Rafiq (Banani->Gulshan1)');
+  const alice = await prisma.users.create({
+    data: {
+      full_name: 'Alice',
+      email: 'alice@dhakateslapool.test',
+      phone: '+8801710000009',
+      password_hash: passwordHash,
+      role: 'passenger',
+    },
+  });
+
+  console.log('  Users ready: Jashim, Kuddus (drivers), Nusrat, Rafiq, Shirin, Moshee-Ur, Mehek, Alice (passengers)');
   console.log('\nSeed complete. Demo login password for all users: ' + DEMO_PASSWORD);
 }
 

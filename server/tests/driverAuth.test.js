@@ -4,7 +4,7 @@ const prisma = require('../src/config/db');
 
 const DRIVER_EMAIL = 'test.driver.auth@dhakateslapool.test';
 const PASSENGER_EMAIL = 'test.passenger.fordrivercheck@dhakateslapool.test';
-const PASSWORD = 'password123';
+const PASSWORD = 'oi_mama_jaben@123';
 
 async function cleanup() {
   await prisma.users.deleteMany({

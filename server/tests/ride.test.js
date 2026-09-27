@@ -5,7 +5,7 @@ const prisma = require('../src/config/db');
 const PASSENGER_ONE_EMAIL = 'test.ride.passenger1@dhakateslapool.test';
 const PASSENGER_TWO_EMAIL = 'test.ride.passenger2@dhakateslapool.test';
 const DRIVER_EMAIL = 'test.ride.driver@dhakateslapool.test';
-const PASSWORD = 'password123';
+const PASSWORD = 'oi_mama_jaben@123';
 
 async function cleanup() {
   const users = await prisma.users.findMany({

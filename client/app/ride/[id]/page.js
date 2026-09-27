@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { RIDE_STATUS_LABELS, formatPaisa } from "@/lib/rideStatus";
 import Nav from "@/components/layout/Nav";
 import Button from "@/components/ui/Button";
 import JourneyRoad from "@/components/ride/JourneyRoad";
 import SuccessBurst from "@/components/ui/SuccessBurst";
+import { RIDE_STATUS_LABELS, RIDE_STATUS_PROGRESS, formatPaisa } from "@/lib/rideStatus";
 
 const TERMINAL_STATUSES = ["completed", "cancelled"];
 const CANCELLABLE = ["requested", "matched", "accepted", "driver_arrived"];
@@ -88,7 +88,12 @@ export default function RideDetail() {
           {RIDE_STATUS_LABELS[ride.status]}
         </p>
 
-        <JourneyRoad pickupName={pickupName} destinationName={destinationName} status={ride.status} />
+        <JourneyRoad
+          pickupName={pickupName}
+          destinationName={destinationName}
+          progress={RIDE_STATUS_PROGRESS[ride.status] ?? 0}
+          muted={ride.status === "cancelled"}
+        />
 
         <div className="flex justify-between items-center mt-8 border-t-2 border-rickshaw-green/10 pt-5">
           <span className="text-ink/60">Fare</span>

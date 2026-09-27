@@ -5,10 +5,11 @@ import { useParams } from "next/navigation";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { formatPaisa } from "@/lib/rideStatus";
 import Nav from "@/components/layout/Nav";
 import Button from "@/components/ui/Button";
 import Seats from "@/components/pool/Seats";
+import JourneyRoad from "@/components/ride/JourneyRoad";
+import { POOL_STATUS_PROGRESS, formatPaisa } from "@/lib/rideStatus";
 
 const NEXT_ACTION = {
   open: { label: "Accept Pool", fn: "acceptPool" },
@@ -26,6 +27,7 @@ export default function PoolDetail() {
   const [members, setMembers] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [zones, setZones] = useState([]);
 
   const fetchPool = useCallback(async () => {
     try {
@@ -38,7 +40,9 @@ export default function PoolDetail() {
   }, [id, token]);
 
   useEffect(() => {
-    if (token) fetchPool();
+    if (!token) return;
+    api.listZones().then(({ data }) => setZones(data.zones));
+    fetchPool();
   }, [token, fetchPool]);
 
   async function handleAdvance() {
@@ -70,6 +74,11 @@ export default function PoolDetail() {
   }
 
   if (loading || !user || !pool) return null;
+
+  const zoneName = (id) => zones.find((z) => z.id === id)?.name || "...";
+  const activeMembers = members.filter((m) => m.status === "active");
+  const pickupName = activeMembers[0] ? zoneName(activeMembers[0].pickup_zone_id) : "...";
+  const destinationNames = [...new Set(activeMembers.map((m) => zoneName(m.destination_zone_id)))].join(" & ");
 
   const action = NEXT_ACTION[pool.status];
   const totalFare = members

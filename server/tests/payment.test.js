@@ -5,7 +5,7 @@ const prisma = require('../src/config/db');
 const DRIVER_EMAIL = 'test.payment.driver@dhakateslapool.test';
 const PASSENGER_EMAIL = 'test.payment.passenger@dhakateslapool.test';
 const OTHER_PASSENGER_EMAIL = 'test.payment.otherpassenger@dhakateslapool.test';
-const PASSWORD = 'password123';
+const PASSWORD = 'oi_mama_jaben@123';
 const PLATE = 'TEST-PAY-01';
 
 let driverToken, passengerToken, otherPassengerToken;

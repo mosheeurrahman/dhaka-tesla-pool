@@ -22,6 +22,17 @@ async function assertVehicleReady(vehicleId, driverId) {
   if (vehicle.status !== 'active') {
     throw new ApiError(400, 'Vehicle must be active to start a pool');
   }
+
+  const existingActivePool = await prisma.pools.findFirst({
+    where: { vehicle_id: vehicleId, status: { notIn: ['completed', 'cancelled'] } },
+  });
+  if (existingActivePool) {
+    throw new ApiError(
+      409,
+      'This vehicle already has an active pool. Finish or cancel it before starting a new one.'
+    );
+  }
+
   return vehicle;
 }
 

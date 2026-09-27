@@ -10,7 +10,7 @@ const prisma = require('../src/config/db');
 
 const DRIVER_EMAIL = 'test.compliance.driver@dhakateslapool.test';
 const PASSENGER_EMAIL = 'test.compliance.passenger@dhakateslapool.test';
-const PASSWORD = 'password123';
+const PASSWORD = 'oi_mama_jaben@123';
 const PLATE = 'TEST-COMPLY-01';
 
 let driverToken, passengerToken;
