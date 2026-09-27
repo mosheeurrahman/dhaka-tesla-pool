@@ -45,19 +45,20 @@ model pool_members {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model pools {
-  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  vehicle_id        String         @unique(map: "one_active_pool_per_vehicle", where: raw("(status <> ALL (ARRAY['completed'::pool_status, 'cancelled'::pool_status]))")) @db.Uuid
-  capacity_snapshot Int            @db.SmallInt
-  status            pool_status    @default(open)
-  created_at        DateTime       @default(now()) @db.Timestamptz(6)
-  accepted_at       DateTime?      @db.Timestamptz(6)
-  driver_arrived_at DateTime?      @db.Timestamptz(6)
-  started_at        DateTime?      @db.Timestamptz(6)
-  completed_at      DateTime?      @db.Timestamptz(6)
-  cancelled_at      DateTime?      @db.Timestamptz(6)
-  updated_at        DateTime       @default(now()) @db.Timestamptz(6)
-  pool_members      pool_members[]
-  vehicles          vehicles       @relation(fields: [vehicle_id], references: [id], map: "fk_pool_vehicle")
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vehicle_id         String         @unique(map: "one_active_pool_per_vehicle", where: raw("(status <> ALL (ARRAY['completed'::pool_status, 'cancelled'::pool_status]))")) @db.Uuid
+  capacity_snapshot  Int            @db.SmallInt
+  status             pool_status    @default(open)
+  created_at         DateTime       @default(now()) @db.Timestamptz(6)
+  accepted_at        DateTime?      @db.Timestamptz(6)
+  driver_arrived_at  DateTime?      @db.Timestamptz(6)
+  started_at         DateTime?      @db.Timestamptz(6)
+  completed_at       DateTime?      @db.Timestamptz(6)
+  cancelled_at       DateTime?      @db.Timestamptz(6)
+  updated_at         DateTime       @default(now()) @db.Timestamptz(6)
+  current_stop_index Int            @default(0)
+  pool_members       pool_members[]
+  vehicles           vehicles       @relation(fields: [vehicle_id], references: [id], map: "fk_pool_vehicle")
 
   @@index([status], map: "idx_pools_status")
   @@index([vehicle_id], map: "idx_pools_vehicle")

@@ -11,5 +11,9 @@ const getFareEstimate = asyncHandler(async (req, res) => {
   const result = await zoneService.estimateFare(req.query);
   sendSuccess(res, 200, result, 'Fare estimate');
 });
+const getGraph = asyncHandler(async (req, res) => {
+  const graph = await zoneService.getGraph();
+  sendSuccess(res, 200, { graph }, 'Dhaka route graph');
+});
 
-module.exports = { listZones, getFareEstimate };
+module.exports = { listZones, getFareEstimate, getGraph };

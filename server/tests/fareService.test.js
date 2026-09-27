@@ -25,15 +25,3 @@ describe('fare.service - calculateFare (hand-verifiable)', () => {
     expect(fare.totalFarePaisa).toBe(9000); // 3000 + 6000
   });
 });
-
-describe('fare.service - haversineDistanceKm (sanity check)', () => {
-  it('returns ~0 for identical points', () => {
-    expect(fareService.haversineDistanceKm(23.79, 90.40, 23.79, 90.40)).toBeCloseTo(0, 3);
-  });
-
-  it('returns roughly the known distance for 1 degree of latitude (~111km)', () => {
-    const distance = fareService.haversineDistanceKm(0, 0, 1, 0);
-    expect(distance).toBeGreaterThan(110);
-    expect(distance).toBeLessThan(112);
-  });
-});

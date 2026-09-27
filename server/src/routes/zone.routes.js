@@ -8,5 +8,6 @@ const router = express.Router();
 // Public reference data - no auth required to browse zones or preview a fare
 router.get('/', controller.listZones);
 router.get('/fare-estimate', validate(fareEstimateSchema), controller.getFareEstimate);
+router.get('/graph', controller.getGraph);
 
 module.exports = router;
