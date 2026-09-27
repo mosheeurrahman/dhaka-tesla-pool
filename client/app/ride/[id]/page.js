@@ -10,6 +10,8 @@ import Button from "@/components/ui/Button";
 import JourneyRoad from "@/components/ride/JourneyRoad";
 import SuccessBurst from "@/components/ui/SuccessBurst";
 import { RIDE_STATUS_LABELS, RIDE_STATUS_PROGRESS, formatPaisa } from "@/lib/rideStatus";
+import DhakaMap, { PATH_COLORS } from "@/components/map/DhakaMap";
+import PathLegendCard from "@/components/map/PathLegendCard";
 
 const TERMINAL_STATUSES = ["completed", "cancelled"];
 const CANCELLABLE = ["requested", "matched", "accepted", "driver_arrived"];
@@ -26,11 +28,16 @@ export default function RideDetail() {
   const [busy, setBusy] = useState(false);
   const [justPaid, setJustPaid] = useState(false);
 
+  const [graph, setGraph] = useState(null);
+  const [routeInfo, setRouteInfo] = useState(null);
+
   const fetchRide = useCallback(async () => {
     try {
       const { data } = await api.getRide(id, token);
       setRide({ ...data.ride, poolmates: data.poolmates });
       setPayment(data.payment);
+      const routeRes = await api.getRideRoute(id, token);
+      setRouteInfo(routeRes.data);
     } catch (err) {
       setError(err.message);
     }
@@ -39,6 +46,7 @@ export default function RideDetail() {
   useEffect(() => {
     if (!token) return;
     api.listZones().then(({ data }) => setZones(data.zones));
+    api.getRouteGraph().then(({ data }) => setGraph(data.graph));
     fetchRide();
   }, [token, fetchRide]);
 
@@ -94,6 +102,47 @@ export default function RideDetail() {
           progress={RIDE_STATUS_PROGRESS[ride.status] ?? 0}
           muted={ride.status === "cancelled"}
         />
+
+        {graph && routeInfo && (
+          <div className="mt-6">
+            <DhakaMap
+              graph={graph}
+              vehiclePosition={routeInfo.progress?.vehiclePosition}
+              paths={[
+                { codes: routeInfo.ownPath, color: PATH_COLORS[0], label: "You" },
+                ...routeInfo.poolMembers
+                  .filter((m) => m.passenger_name) // exclude self if API ever includes it
+                  .map((m, i) => ({
+                    codes: m.path,
+                    color: PATH_COLORS[(i + 1) % PATH_COLORS.length],
+                    label: m.passenger_name,
+                  })),
+              ]}
+            />
+
+            {routeInfo.poolMembers.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <PathLegendCard
+                  label="You"
+                  color={PATH_COLORS[0]}
+                  pathNames={zones.length ? routeInfo.ownPath.map((code) => zones.find((z) => z.code === code)?.name || code) : routeInfo.ownPath}
+                  distanceKm={null}
+                  farePaisa={null}
+                />
+                {routeInfo.poolMembers.map((m, i) => (
+                  <PathLegendCard
+                    key={m.pool_member_id}
+                    label={m.passenger_name}
+                    color={PATH_COLORS[(i + 1) % PATH_COLORS.length]}
+                    pathNames={m.path_names}
+                    distanceKm={m.distance_km}
+                    farePaisa={m.agreed_fare_paisa}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex justify-between items-center mt-8 border-t-2 border-rickshaw-green/10 pt-5">
           <span className="text-ink/60">Fare</span>

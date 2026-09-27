@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SearchingOverlay from "@/components/ride/SearchingOverlay";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useAuth } from "@/context/AuthContext";
@@ -10,6 +9,8 @@ import { formatPaisa } from "@/lib/rideStatus";
 import Nav from "@/components/layout/Nav";
 import Button from "@/components/ui/Button";
 import Vine from "@/components/motifs/Vine";
+import SearchingOverlay from "@/components/ride/SearchingOverlay";
+import DhakaMap, { PATH_COLORS } from "@/components/map/DhakaMap";
 
 export default function RequestRide() {
   const { user, loading } = useRequireAuth("passenger");
@@ -17,23 +18,30 @@ export default function RequestRide() {
   const router = useRouter();
 
   const [zones, setZones] = useState([]);
+  const [graph, setGraph] = useState(null);
   const [pickupId, setPickupId] = useState("");
   const [destinationId, setDestinationId] = useState("");
   const [seats, setSeats] = useState(1);
   const [fare, setFare] = useState(null);
+  const [routePath, setRoutePath] = useState([]);
   const [fareLoading, setFareLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showSearching, setShowSearching] = useState(false);
   const [createdRideId, setCreatedRideId] = useState(null);
 
+  const pickupCode = zones.find((z) => z.id === pickupId)?.code;
+  const destinationCode = zones.find((z) => z.id === destinationId)?.code;
+
   useEffect(() => {
     api.listZones().then(({ data }) => setZones(data.zones));
+    api.getRouteGraph().then(({ data }) => setGraph(data.graph));
   }, []);
 
   useEffect(() => {
     if (!pickupId || !destinationId || pickupId === destinationId) {
       setFare(null);
+      setRoutePath([]);
       return;
     }
     setFareLoading(true);
@@ -45,12 +53,15 @@ export default function RequestRide() {
         seats_requested: seats,
         pooled: "true",
       })
-      .then(({ data }) => setFare(data.fare))
+      .then(({ data }) => {
+        setFare(data.fare);
+        setRoutePath(data.route?.path || []);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setFareLoading(false));
   }, [pickupId, destinationId, seats]);
 
-    async function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
@@ -80,7 +91,18 @@ export default function RequestRide() {
           <Vine className="w-40 h-5" color="var(--color-rickshaw-green)" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <DhakaMap
+          graph={graph}
+          pickupCode={pickupCode}
+          destinationCode={destinationCode}
+          paths={
+            routePath.length
+              ? [{ codes: routePath, color: PATH_COLORS[0], label: "Your route" }]
+              : []
+          }
+        />
+
+        <form onSubmit={handleSubmit} className="space-y-5 mt-6">
           <label className="block">
             <span className="font-body text-sm font-medium text-ink/80 mb-1 block">Pickup</span>
             <select

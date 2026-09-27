@@ -59,4 +59,6 @@ export const api = {
   startPool: (id, token) => request(`/pools/${id}/start`, { method: "PATCH", token }),
   completePool: (id, token) => request(`/pools/${id}/complete`, { method: "PATCH", token }),
   cancelPool: (id, token) => request(`/pools/${id}/cancel`, { method: "PATCH", token }),
+  getRouteGraph: () => request("/zones/graph"),
+  getRideRoute: (id, token) => request(`/rides/${id}/route`, { token }),
 };
