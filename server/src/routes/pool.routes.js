@@ -1,35 +1,20 @@
 const express = require('express');
 const validate = require('../middlewares/validate.middleware');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
-const {
-  createPoolSchema,
-  joinPoolSchema,
-  poolIdParamSchema,
-  availableRequestsQuerySchema,
-  poolHistoryQuerySchema,
-} = require('../validators/pool.schema');
+const { poolIdParamSchema, poolHistoryQuerySchema } = require('../validators/pool.schema');
 const controller = require('../controllers/pool.controller');
 
 const router = express.Router();
 
 router.use(authenticate, authorize('driver'));
 
-// Specific paths before '/:id' - same ordering trap as vehicles/rides.
-router.get(
-  '/available-requests',
-  validate(availableRequestsQuerySchema),
-  controller.getAvailableRequests
-);
 router.get('/mine', validate(poolHistoryQuerySchema), controller.getMyPools);
-router.get('/mine/detailed', validate(poolHistoryQuerySchema), controller.getMyPoolsDetailed);
-
-router.post('/', validate(createPoolSchema), controller.createPool);
-router.post('/:id/join', validate(joinPoolSchema), controller.joinPool);
-
 router.get('/:id', validate(poolIdParamSchema), controller.getPoolById);
+router.get('/:id/combined-route', validate(poolIdParamSchema), controller.getCombinedRoute);
 router.patch('/:id/accept', validate(poolIdParamSchema), controller.acceptPool);
 router.patch('/:id/arrived', validate(poolIdParamSchema), controller.markDriverArrived);
 router.patch('/:id/start', validate(poolIdParamSchema), controller.startPool);
+router.patch('/:id/advance-stop', validate(poolIdParamSchema), controller.advanceStop);
 router.patch('/:id/complete', validate(poolIdParamSchema), controller.completePool);
 router.patch('/:id/cancel', validate(poolIdParamSchema), controller.cancelPool);
 

@@ -4,6 +4,7 @@ const { authenticate, authorize } = require('../middlewares/auth.middleware');
 const { createRideSchema, rideIdParamSchema, rideHistoryQuerySchema } = require('../validators/ride.schema');
 const controller = require('../controllers/ride.controller');
 
+
 const router = express.Router();
 
 
@@ -16,6 +17,7 @@ router.get('/me', validate(rideHistoryQuerySchema), controller.getMyRides);
 router.get('/:id', validate(rideIdParamSchema), controller.getRideById);
 router.get('/:id/history', validate(rideIdParamSchema), controller.getRideHistory);
 router.patch('/:id/cancel', validate(rideIdParamSchema), controller.cancelRide);
+router.get('/:id/route', validate(rideIdParamSchema), controller.getRideRoute);
 
 
 module.exports = router;

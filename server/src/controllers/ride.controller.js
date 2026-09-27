@@ -1,6 +1,7 @@
 const rideService = require('../services/ride.service');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendSuccess } = require('../utils/ApiResponse');
+const poolService = require('../services/pool.service');
 
 const createRide = asyncHandler(async (req, res) => {
   const ride = await rideService.createRideRequest(req.user.id, req.body);
@@ -27,4 +28,15 @@ const cancelRide = asyncHandler(async (req, res) => {
   sendSuccess(res, 200, { ride }, 'Ride cancelled');
 });
 
-module.exports = { createRide, getMyRides, getRideById, getRideHistory, cancelRide };
+const getRideRoute = asyncHandler(async (req, res) => {
+  const info = await poolService.getRouteInfoForRide(req.params.id, req.user.id);
+  sendSuccess(res, 200, info, 'Route info');
+});
+
+module.exports = { 
+  createRide, 
+  getMyRides, 
+  getRideById, 
+  getRideHistory, 
+  cancelRide,
+  getRideRoute };

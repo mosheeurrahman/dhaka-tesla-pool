@@ -59,17 +59,21 @@ beforeAll(async () => {
     .send({ name: 'Bullet', model: 'Model 3', plate_number: PLATE, capacity: 3 });
   vehicleId = vehicleRes.body.data.vehicle.id;
 
+  await request(app)
+    .patch('/api/v1/drivers/status')
+    .set('Authorization', `Bearer ${driverToken}`)
+    .send({ is_online: true });
+
   const rideRes = await request(app)
     .post('/api/v1/rides')
     .set('Authorization', `Bearer ${passengerToken}`)
     .send({ pickup_zone_id: banani.id, destination_zone_id: mohakhali.id, seats_requested: 1 });
   completedRideId = rideRes.body.data.ride.id;
 
-  const poolRes = await request(app)
-    .post('/api/v1/pools')
-    .set('Authorization', `Bearer ${driverToken}`)
-    .send({ vehicle_id: vehicleId, ride_request_id: completedRideId });
-  const poolId = poolRes.body.data.pool.id;
+  const poolsRes = await request(app)
+    .get('/api/v1/pools/mine')
+    .set('Authorization', `Bearer ${driverToken}`);
+  const poolId = poolsRes.body.data.pools[0].id;
 
   await request(app).patch(`/api/v1/pools/${poolId}/accept`).set('Authorization', `Bearer ${driverToken}`);
   await request(app).patch(`/api/v1/pools/${poolId}/arrived`).set('Authorization', `Bearer ${driverToken}`);

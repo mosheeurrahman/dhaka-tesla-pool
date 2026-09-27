@@ -1,6 +1,7 @@
 const prisma = require('../config/db');
 const ApiError = require('../utils/ApiError');
 const zoneService = require('./zone.service');
+const poolService = require('./pool.service');
 
 // Cancellation is only allowed before the trip physically starts - once a
 // driver has started the ride, cancelling it retroactively doesn't make
@@ -43,8 +44,9 @@ async function createRideRequest(passengerId, data) {
   });
 
   await logStatusHistory(ride.id, 'requested', passengerId, 'Ride requested by passenger');
-
-  return ride;
+  await poolService.autoMatchRide(ride);
+  const updatedRide = await prisma.ride_requests.findUnique({ where: { id: ride.id } });
+  return updatedRide;
 }
 
 // Central ownership check - every function below that touches a specific
