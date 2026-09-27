@@ -3,35 +3,12 @@ const ApiError = require('../utils/ApiError');
 const fareService = require('./fare.service');
 const dhakaGraph = require('../data/dhakaGraph');
 
-const UNASSIGNED_CAPACITY = 3; // largest possible vehicle capacity - a safe ceiling before a driver (and their real capacity) is known
-
-// ---------- path / matching helpers ----------
+const UNASSIGNED_CAPACITY = 3;
 
 async function getRidePath(ride) {
   const pickup = await prisma.zones.findUnique({ where: { id: ride.pickup_zone_id } });
   const destination = await prisma.zones.findUnique({ where: { id: ride.destination_zone_id } });
   return dhakaGraph.shortestPath(pickup.code, destination.code);
-}
-
-async function getRidePathEdgeKeys(ride) {
-  const route = await getRidePath(ride);
-  if (!route) return [];
-  return route.edges.map((e) => dhakaGraph.edgeKey(e.from, e.to));
-}
-
-async function getPoolEdgeUnion(poolId) {
-  const members = await prisma.pool_members.findMany({ where: { pool_id: poolId, status: 'active' } });
-  const edgeSet = new Set();
-  for (const m of members) {
-    const ride = await prisma.ride_requests.findUnique({ where: { id: m.ride_request_id } });
-    const keys = await getRidePathEdgeKeys(ride);
-    keys.forEach((k) => edgeSet.add(k));
-  }
-  return edgeSet;
-}
-
-function hasOverlap(edgeKeysA, edgeSetB) {
-  return edgeKeysA.some((k) => edgeSetB.has(k));
 }
 
 async function recalculateFaresForPool(poolId) {
@@ -53,17 +30,15 @@ async function recalculateFaresForPool(poolId) {
   }
 }
 
-// ---------- automatic passenger-side grouping (driver assignment is separate) ----------
-
-// MATCHING RULE (documented): two rides are poolable if their Dijkstra
-// shortest paths share at least one common graph edge - a literal shared
-// road segment. Grouping happens automatically and is driver-independent;
-// a group starts with no vehicle assigned (status 'open', vehicle_id null)
-// and stays joinable by further overlapping rides while 'open' or
-// 'accepted' (i.e. any time before the vehicle physically starts moving).
+// MATCHING RULE (corrected): passengers can only share a vehicle if all of
+// their pickup->destination paths merge into ONE single straight line with
+// no forking and no revisited nodes - i.e. dhakaGraph.tryMergePath succeeds.
+// Sharing a single edge is NOT enough on its own if the paths approach that
+// edge from genuinely different directions (a fork), since a single
+// vehicle cannot serve two diverging branches without doubling back.
 async function autoMatchRide(ride) {
-  const rideEdgeKeys = await getRidePathEdgeKeys(ride);
-  if (rideEdgeKeys.length === 0) return null;
+  const route = await getRidePath(ride);
+  if (!route) return null;
 
   const joinablePools = await prisma.pools.findMany({
     where: { status: { in: ['open', 'accepted'] } },
@@ -75,8 +50,8 @@ async function autoMatchRide(ride) {
     const usedSeats = activeMembers.reduce((sum, m) => sum + m.seats_allocated, 0);
     if (usedSeats + ride.seats_requested > pool.capacity_snapshot) continue;
 
-    const edgeUnion = await getPoolEdgeUnion(pool.id);
-    if (hasOverlap(rideEdgeKeys, edgeUnion)) {
+    const merged = dhakaGraph.tryMergePath(pool.spine || [], route.path);
+    if (merged) {
       await prisma.pool_members.create({
         data: {
           pool_id: pool.id,
@@ -85,17 +60,16 @@ async function autoMatchRide(ride) {
           agreed_fare_paisa: 0,
         },
       });
+      await prisma.pools.update({ where: { id: pool.id }, data: { spine: merged } });
       await recalculateFaresForPool(pool.id);
       return pool.id;
     }
   }
 
-  // No overlapping group exists yet - open a brand-new, unassigned one.
   const pool = await prisma.pools.create({
-    data: { vehicle_id: null, capacity_snapshot: UNASSIGNED_CAPACITY, status: 'open' },
+    data: { vehicle_id: null, capacity_snapshot: UNASSIGNED_CAPACITY, status: 'open', spine: route.path },
   });
 
-  const route = await getRidePath(ride);
   const fare = fareService.calculateFare({
     distanceKm: route.distanceKm,
     seatsRequested: ride.seats_requested,
@@ -124,16 +98,12 @@ async function sweepUnmatchedRides() {
   }
 }
 
-// ---------- zone name lookup ----------
-
 async function zoneNameMap() {
   const zones = await prisma.zones.findMany();
   const map = {};
   zones.forEach((z) => { map[z.code] = z.name; });
   return map;
 }
-
-// ---------- driver: browse unassigned groups (visible to ALL online drivers) ----------
 
 async function buildMemberDetails(members) {
   const nameMap = await zoneNameMap();
@@ -158,8 +128,6 @@ async function buildMemberDetails(members) {
   );
 }
 
-// Viewing this list is unrestricted for any authenticated driver - looking
-// at a group never locks it. Only acceptOpenPool (below) does.
 async function listOpenPoolsForDrivers() {
   const pools = await prisma.pools.findMany({
     where: { vehicle_id: null, status: 'open' },
@@ -174,10 +142,6 @@ async function listOpenPoolsForDrivers() {
   );
 }
 
-// Atomic claim: the WHERE clause only matches while the pool is still
-// unassigned, so if two drivers click Accept at nearly the same instant,
-// only the first UPDATE actually changes a row - the second gets count: 0
-// and a clean 409, rather than both drivers silently believing they got it.
 async function acceptOpenPool(driverId, poolId) {
   const vehicle = await prisma.vehicles.findFirst({ where: { driver_id: driverId, status: 'active' } });
   if (!vehicle) throw new ApiError(400, 'You need an active vehicle to accept a ride');
@@ -204,8 +168,6 @@ async function acceptOpenPool(driverId, poolId) {
 
   return prisma.pools.findUnique({ where: { id: poolId } });
 }
-
-// ---------- driver: own accepted/in-progress rides ----------
 
 async function getPoolOwnedByDriver(poolId, driverId) {
   const pool = await prisma.pools.findUnique({ where: { id: poolId } });
@@ -234,19 +196,6 @@ async function getPoolDetail(driverId, poolId) {
   return { pool, members: await buildMemberDetails(members) };
 }
 
-// ---------- combined route + progress ----------
-
-async function getFoundingMemberRoute(poolId) {
-  const founding = await prisma.pool_members.findFirst({ where: { pool_id: poolId }, orderBy: { joined_at: 'asc' } });
-  if (!founding) return null;
-  const ride = await prisma.ride_requests.findUnique({ where: { id: founding.ride_request_id } });
-  return getRidePath(ride);
-}
-
-// SIMPLIFYING ASSUMPTION (documented): the founding member's path is the
-// route's "spine"; every other member's pickup/dropoff is ordered by
-// position along that spine. Covers the common 2-3 rider overlapping-
-// corridor case without solving a full vehicle-routing problem.
 async function getCombinedRoute(poolId) {
   const pool = await prisma.pools.findUnique({ where: { id: poolId } });
   const members = await prisma.pool_members.findMany({
@@ -255,9 +204,7 @@ async function getCombinedRoute(poolId) {
   });
   const nameMap = await zoneNameMap();
 
-  const spineRoute = await getFoundingMemberRoute(poolId);
-  const spine = spineRoute ? spineRoute.path : [];
-
+  const spine = pool.spine || [];
   const cumulative = [0];
   for (let i = 1; i < spine.length; i++) {
     cumulative.push(cumulative[i - 1] + dhakaGraph.edgeWeight(spine[i - 1], spine[i]));
@@ -307,8 +254,6 @@ async function advanceStop(driverId, poolId) {
   return prisma.pools.update({ where: { id: poolId }, data: { current_stop_index: pool.current_stop_index + 1 } });
 }
 
-// ---------- passenger-facing read ----------
-
 async function getRouteInfoForRide(rideId, passengerId) {
   const ride = await prisma.ride_requests.findUnique({ where: { id: rideId } });
   if (!ride || ride.passenger_id !== passengerId) throw new ApiError(403, 'You do not have access to this ride');
@@ -324,8 +269,6 @@ async function getRouteInfoForRide(rideId, passengerId) {
 
   return { ownPath: route ? route.path : [], poolMembers: combined.members, progress };
 }
-
-// ---------- pool lifecycle (post-acceptance only) ----------
 
 const POOL_TRANSITIONS = {
   accepted: ['driver_arrived', 'cancelled'],

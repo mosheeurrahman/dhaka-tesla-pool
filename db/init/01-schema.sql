@@ -196,6 +196,7 @@ CREATE TABLE IF NOT EXISTS pools (
     vehicle_id UUID,
     capacity_snapshot SMALLINT NOT NULL,
     current_stop_index SMALLINT NOT NULL DEFAULT 0,
+    spine JSONB,
     status pool_status NOT NULL DEFAULT 'open',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     accepted_at TIMESTAMPTZ,

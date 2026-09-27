@@ -33,7 +33,6 @@ function edgeWeight(a, b) {
   return found ? found.weight : 0;
 }
 
-// Dijkstra shortest path between two zone codes.
 function shortestPath(startCode, endCode) {
   const dist = {};
   const prev = {};
@@ -84,4 +83,66 @@ function shortestPath(startCode, endCode) {
   return { path, distanceKm: dist[endCode], edges };
 }
 
-module.exports = { EDGES, adjacency, shortestPath, edgeKey, edgeWeight };
+function arraysEqual(a, b) {
+  if (a.length !== b.length) return false;
+  return a.every((v, i) => v === b[i]);
+}
+
+function hasDuplicates(arr) {
+  return new Set(arr).size !== arr.length;
+}
+
+function findContiguousSublistIndex(haystack, needle) {
+  if (needle.length === 0 || needle.length > haystack.length) return -1;
+  for (let i = 0; i <= haystack.length - needle.length; i++) {
+    let match = true;
+    for (let j = 0; j < needle.length; j++) {
+      if (haystack[i + j] !== needle[j]) { match = false; break; }
+    }
+    if (match) return i;
+  }
+  return -1;
+}
+
+// Determines whether `candidate` (a passenger's pickup->destination path)
+// can be merged into `spine` (the vehicle's current combined route) to
+// form ONE longer simple path with no revisited nodes - i.e. a single
+// straight line the vehicle can actually drive without doubling back or
+// forking. Returns the merged path (array of zone codes) if compatible,
+// or null if the routes fork and cannot share one vehicle.
+function tryMergePath(spine, candidate) {
+  if (!spine || spine.length === 0) return candidate;
+
+  const orientations = [candidate, [...candidate].reverse()];
+
+  for (const c of orientations) {
+    // candidate already lies entirely within the existing spine
+    if (findContiguousSublistIndex(spine, c) !== -1) return spine;
+    // the existing spine lies entirely within the candidate (candidate supersedes it)
+    if (findContiguousSublistIndex(c, spine) !== -1) return c;
+
+    // spine's tail overlaps candidate's head - extend forward
+    for (let overlap = Math.min(spine.length, c.length); overlap >= 1; overlap--) {
+      const spineSuffix = spine.slice(spine.length - overlap);
+      const cPrefix = c.slice(0, overlap);
+      if (arraysEqual(spineSuffix, cPrefix)) {
+        const merged = spine.concat(c.slice(overlap));
+        if (!hasDuplicates(merged)) return merged;
+      }
+    }
+
+    // candidate's tail overlaps spine's head - extend backward
+    for (let overlap = Math.min(spine.length, c.length); overlap >= 1; overlap--) {
+      const cSuffix = c.slice(c.length - overlap);
+      const spinePrefix = spine.slice(0, overlap);
+      if (arraysEqual(cSuffix, spinePrefix)) {
+        const merged = c.slice(0, c.length - overlap).concat(spine);
+        if (!hasDuplicates(merged)) return merged;
+      }
+    }
+  }
+
+  return null;
+}
+
+module.exports = { EDGES, adjacency, shortestPath, edgeKey, edgeWeight, tryMergePath };

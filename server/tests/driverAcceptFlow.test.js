@@ -89,4 +89,25 @@ describe('Open ride requests: visible to all drivers, locked only on accept', ()
     const res = await request(app).patch(`/api/v1/pools/${poolId}/accept`).set('Authorization', `Bearer ${driverOneToken}`);
     expect(res.statusCode).toBe(409);
   });
+  it('never combines two rides whose paths fork in different directions', async () => {
+    const mohammadpur = await prisma.zones.findUnique({ where: { code: 'MOHAMMADPUR' } });
+    const dhanmondi = await prisma.zones.findUnique({ where: { code: 'DHAHANMANDI' } });
+    const bracu = await prisma.zones.findUnique({ where: { code: 'BRACU' } });
+
+    const rideA = await request(app)
+      .post('/api/v1/rides')
+      .set('Authorization', `Bearer ${passengerToken}`)
+      .send({ pickup_zone_id: mohammadpur.id, destination_zone_id: bracu.id });
+
+    const rideB = await request(app)
+      .post('/api/v1/rides')
+      .set('Authorization', `Bearer ${passengerToken}`)
+      .send({ pickup_zone_id: dhanmondi.id, destination_zone_id: bracu.id });
+
+    const openList = await request(app).get('/api/v1/pools/open').set('Authorization', `Bearer ${driverOneToken}`);
+    const poolA = openList.body.data.pools.find((p) => p.members.some((m) => m.ride_request_id === rideA.body.data.ride.id));
+    const poolB = openList.body.data.pools.find((p) => p.members.some((m) => m.ride_request_id === rideB.body.data.ride.id));
+
+    expect(poolA.pool.id).not.toBe(poolB.pool.id); // must be two SEPARATE pools, not merged
+  });
 });
