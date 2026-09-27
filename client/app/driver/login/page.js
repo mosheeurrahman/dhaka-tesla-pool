@@ -7,6 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import Nav from "@/components/layout/Nav";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { DEMO_DRIVERS } from "@/lib/demoUsers";
+import DemoUserCard from "@/components/auth/DemoUserCard";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function DriverLogin() {
   const { login } = useAuth();
@@ -28,6 +31,10 @@ export default function DriverLogin() {
       setSubmitting(false);
     }
   }
+    function fillDemoUser(user) {
+    setForm({ email: user.email, password: user.password });
+    setError("");
+  }
 
   return (
     <main className="min-h-screen">
@@ -46,9 +53,8 @@ export default function DriverLogin() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
-          <Input
+          <PasswordInput
             label="Password"
-            type="password"
             required
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -59,6 +65,16 @@ export default function DriverLogin() {
           <Button type="submit" variant="secondary" className="w-full" disabled={submitting}>
             {submitting ? "Logging in..." : "Log In"}
           </Button>
+
+        <div className="mt-8">
+          <p className="text-center text-sm text-ink/50 mb-3">Or try the demo driver</p>
+          <div className="grid grid-cols-2 gap-2">
+            {DEMO_DRIVERS.map((user) => (
+              <DemoUserCard key={user.email} user={user} onSelect={fillDemoUser} accent="red" />
+            ))}
+          </div>
+        </div>
+
         </form>
 
         <p className="text-center text-sm text-ink/60 mt-6">

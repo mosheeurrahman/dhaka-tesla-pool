@@ -7,6 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import Nav from "@/components/layout/Nav";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { DEMO_PASSENGERS } from "@/lib/demoUsers";
+import DemoUserCard from "@/components/auth/DemoUserCard";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function PassengerLogin() {
   const { login } = useAuth();
@@ -28,6 +31,10 @@ export default function PassengerLogin() {
       setSubmitting(false);
     }
   }
+    function fillDemoUser(user) {
+    setForm({ email: user.email, password: user.password });
+    setError("");
+  }
 
   return (
     <main className="min-h-screen">
@@ -46,9 +53,8 @@ export default function PassengerLogin() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
-          <Input
+          <PasswordInput
             label="Password"
-            type="password"
             required
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -59,18 +65,22 @@ export default function PassengerLogin() {
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Logging in..." : "Log In"}
           </Button>
+        
+        <div className="mt-8">
+          <p className="text-center text-sm text-ink/50 mb-3">Or try a demo passenger</p>
+          <div className="grid grid-cols-3 gap-2">
+            {DEMO_PASSENGERS.map((user) => (
+              <DemoUserCard key={user.email} user={user} onSelect={fillDemoUser} accent="green" />
+            ))}
+          </div>
+        </div>
+
         </form>
 
         <p className="text-center text-sm text-ink/60 mt-6">
           New here?{" "}
           <Link href="/signup" className="text-rickshaw-green font-semibold">
             Create an account
-          </Link>
-        </p>
-        <p className="text-center text-sm text-ink/60 mt-2">
-          Are you a driver?{" "}
-          <Link href="/driver/login" className="text-rickshaw-green font-semibold">
-            Log in here
           </Link>
         </p>
       </section>
