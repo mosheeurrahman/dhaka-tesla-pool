@@ -45,14 +45,10 @@ export const api = {
 
   setDriverStatus: (body, token) => request("/drivers/status", { method: "PATCH", body, token }),
 
-  getAvailableRequests: (token, pickupZoneId) =>
-    request(`/pools/available-requests${pickupZoneId ? `?pickup_zone_id=${pickupZoneId}` : ""}`, { token }),
   getMyPools: (token, status) =>
     request(`/pools/mine${status ? `?status=${status}` : ""}`, { token }),
   getMyPoolsDetailed: (token, status) =>
     request(`/pools/mine/detailed${status ? `?status=${status}` : ""}`, { token }),
-  createPool: (body, token) => request("/pools", { method: "POST", body, token }),
-  joinPool: (id, body, token) => request(`/pools/${id}/join`, { method: "POST", body, token }),
   getPool: (id, token) => request(`/pools/${id}`, { token }),
   acceptPool: (id, token) => request(`/pools/${id}/accept`, { method: "PATCH", token }),
   markPoolArrived: (id, token) => request(`/pools/${id}/arrived`, { method: "PATCH", token }),
@@ -61,4 +57,7 @@ export const api = {
   cancelPool: (id, token) => request(`/pools/${id}/cancel`, { method: "PATCH", token }),
   getRouteGraph: () => request("/zones/graph"),
   getRideRoute: (id, token) => request(`/rides/${id}/route`, { token }),
+  getCombinedRoute: (id, token) => request(`/pools/${id}/combined-route`, { token }),
+  advanceStop: (id, token) => request(`/pools/${id}/advance-stop`, { method: "PATCH", token }),
+  getOpenPools: (token) => request("/pools/open", { token }),
 };

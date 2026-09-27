@@ -3,13 +3,9 @@
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 
-const PADDING = 48;
-const VIEW_WIDTH = 640;
-const VIEW_HEIGHT = 440;
+const PADDING = 60;
+const VIEW_SIZE = 680; // square canvas, matches the square 0-12 coordinate grid
 
-// Assigns each highlighted path a distinct, high-contrast color so
-// overlapping journeys stay visually distinguishable from each other
-// and from the base graph.
 export const PATH_COLORS = [
   "#C8283A", // rickshaw red
   "#4E9C90", // dusk teal
@@ -32,9 +28,8 @@ function useProjection(nodes) {
     const spanY = maxY - minY || 1;
 
     function project(x, y) {
-      const px = PADDING + ((x - minX) / spanX) * (VIEW_WIDTH - PADDING * 2);
-      // Flip Y so a visually higher coordinate renders near the top.
-      const py = PADDING + ((maxY - y) / spanY) * (VIEW_HEIGHT - PADDING * 2);
+      const px = PADDING + ((x - minX) / spanX) * (VIEW_SIZE - PADDING * 2);
+      const py = PADDING + ((maxY - y) / spanY) * (VIEW_SIZE - PADDING * 2);
       return [px, py];
     }
 
@@ -42,24 +37,35 @@ function useProjection(nodes) {
   }, [nodes]);
 }
 
-/**
- * graph: { nodes: [{code,name,x,y}], edges: [{from,to,weight}] }
- * paths: [{ codes: [zoneCode,...], color, label }]  - highlighted routes
- * vehiclePosition: zone code where a Bullet marker should render
- * pickupCode / destinationCode: single-journey emphasis (request page)
- */
-export default function DhakaMap({
-  graph,
-  paths = [],
-  vehiclePosition,
-  pickupCode,
-  destinationCode,
-}) {
+// Renders text twice - a thick cream "halo" stroke behind, solid fill on
+// top - so labels stay readable over crossing lines and colored paths.
+function HaloText({ x, y, children, size = 13, weight = "600", fill = "var(--color-ink)" }) {
+  return (
+    <>
+      <text
+        x={x} y={y}
+        fontSize={size}
+        fontWeight={weight}
+        stroke="var(--color-cream)"
+        strokeWidth="4"
+        strokeLinejoin="round"
+        textAnchor="middle"
+      >
+        {children}
+      </text>
+      <text x={x} y={y} fontSize={size} fontWeight={weight} fill={fill} textAnchor="middle">
+        {children}
+      </text>
+    </>
+  );
+}
+
+export default function DhakaMap({ graph, paths = [], vehiclePosition, pickupCode, destinationCode }) {
   const { project } = useProjection(graph?.nodes || []);
 
   if (!graph || !graph.nodes.length) {
     return (
-      <div className="w-full aspect-[16/11] flex items-center justify-center text-ink/40 border-2 border-dashed border-ink/10 rounded-2xl">
+      <div className="w-full aspect-square flex items-center justify-center text-ink/40 border-2 border-dashed border-ink/10 rounded-2xl">
         Loading map...
       </div>
     );
@@ -72,15 +78,14 @@ export default function DhakaMap({
   }
 
   function colorForNode(code) {
-    const owningPath = paths.find((p) => p.codes.includes(code));
-    return owningPath ? owningPath.color : null;
+    const owning = paths.find((p) => p.codes.includes(code));
+    return owning ? owning.color : null;
   }
 
   return (
-    <div className="w-full bg-cream-dark/20 border-2 border-rickshaw-green/15 rounded-2xl p-2">
-      <svg viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`} className="w-full h-auto">
-        {/* base graph edges */}
-        {graph.edges.map((e, i) => {
+    <div className="w-full bg-cream-dark/20 border-2 border-rickshaw-green/15 rounded-2xl p-3">
+      <svg viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`} className="w-full h-auto">
+        {graph.edges.map((e) => {
           const a = nodeByCode[e.from];
           const b = nodeByCode[e.to];
           if (!a || !b) return null;
@@ -90,20 +95,16 @@ export default function DhakaMap({
           const midY = (y1 + y2) / 2;
           return (
             <g key={`${e.from}-${e.to}`}>
-              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--color-ink)" strokeOpacity="0.12" strokeWidth="2" />
-              <text x={midX} y={midY - 4} fontSize="9" fill="var(--color-ink)" opacity="0.35" textAnchor="middle">
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--color-ink)" strokeOpacity="0.18" strokeWidth="2.5" />
+              <HaloText x={midX} y={midY - 6} size={12} weight="500" fill="var(--color-ink)">
                 {e.weight}
-              </text>
+              </HaloText>
             </g>
           );
         })}
 
-        {/* highlighted passenger/pool paths, drawn on top, animated in */}
         {paths.map((p, idx) => {
-          const points = p.codes
-            .map((code) => nodeByCode[code])
-            .filter(Boolean)
-            .map((n) => project(n.x, n.y));
+          const points = p.codes.map((c) => nodeByCode[c]).filter(Boolean).map((n) => project(n.x, n.y));
           if (points.length < 2) return null;
           const d = points.map((pt, i) => `${i === 0 ? "M" : "L"} ${pt[0]} ${pt[1]}`).join(" ");
           return (
@@ -112,7 +113,7 @@ export default function DhakaMap({
               d={d}
               fill="none"
               stroke={p.color}
-              strokeWidth="4"
+              strokeWidth="5"
               strokeLinecap="round"
               strokeLinejoin="round"
               initial={{ pathLength: 0, opacity: 0 }}
@@ -122,39 +123,28 @@ export default function DhakaMap({
           );
         })}
 
-        {/* nodes */}
         {graph.nodes.map((n) => {
           const [x, y] = project(n.x, n.y);
           const highlighted = isOnAnyPath(n.code);
-          const isPickup = n.code === pickupCode;
-          const isDestination = n.code === destinationCode;
-          const nodeColor = colorForNode(n.code) || "var(--color-rickshaw-green)";
+          const isEndpoint = n.code === pickupCode || n.code === destinationCode;
+          const color = colorForNode(n.code) || "var(--color-rickshaw-green)";
 
           return (
             <g key={n.code}>
               <circle
-                cx={x}
-                cy={y}
-                r={isPickup || isDestination ? 9 : highlighted ? 7 : 5}
-                fill={isPickup || isDestination ? nodeColor : "var(--color-cream)"}
-                stroke={nodeColor}
-                strokeWidth={highlighted || isPickup || isDestination ? 3 : 2}
+                cx={x} cy={y}
+                r={isEndpoint ? 10 : highlighted ? 8 : 6}
+                fill={isEndpoint ? color : "var(--color-cream)"}
+                stroke={color}
+                strokeWidth={highlighted || isEndpoint ? 3.5 : 2}
               />
-              <text
-                x={x}
-                y={y - 14}
-                fontSize="11"
-                fontWeight={highlighted ? "700" : "500"}
-                fill="var(--color-ink)"
-                textAnchor="middle"
-              >
+              <HaloText x={x} y={y - 16} size={14} weight={highlighted ? "700" : "600"}>
                 {n.name}
-              </text>
+              </HaloText>
             </g>
           );
         })}
 
-        {/* vehicle marker */}
         {vehiclePosition && nodeByCode[vehiclePosition] && (
           <motion.g
             animate={{
@@ -163,8 +153,8 @@ export default function DhakaMap({
             }}
             transition={{ type: "spring", stiffness: 80, damping: 14 }}
           >
-            <circle r="12" fill="var(--color-marigold)" stroke="var(--color-ink)" strokeWidth="2" />
-            <text y="4" fontSize="12" textAnchor="middle">🛺</text>
+            <circle r="13" fill="var(--color-marigold)" stroke="var(--color-ink)" strokeWidth="2.5" />
+            <text y="5" fontSize="14" textAnchor="middle">🛺</text>
           </motion.g>
         )}
       </svg>

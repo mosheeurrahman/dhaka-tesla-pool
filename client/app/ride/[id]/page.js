@@ -91,7 +91,7 @@ export default function RideDetail() {
   return (
     <main className="min-h-screen">
       <Nav />
-      <section className="max-w-xl mx-auto px-6 py-10">
+      <section className="max-w-2xl mx-auto px-6 py-10">
         <p className="text-center font-display text-2xl font-bold text-rickshaw-green mb-6">
           {RIDE_STATUS_LABELS[ride.status]}
         </p>

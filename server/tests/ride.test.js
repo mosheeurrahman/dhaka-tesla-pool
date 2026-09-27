@@ -12,10 +12,18 @@ async function cleanup() {
     where: { email: { in: [PASSENGER_ONE_EMAIL, PASSENGER_TWO_EMAIL, DRIVER_EMAIL] } },
   });
   const userIds = users.map((u) => u.id);
+
   if (userIds.length) {
-    await prisma.ride_status_history.deleteMany({ where: { changed_by_user_id: { in: userIds } } });
-    await prisma.ride_requests.deleteMany({ where: { passenger_id: { in: userIds } } });
+    const rides = await prisma.ride_requests.findMany({ where: { passenger_id: { in: userIds } } });
+    const rideIds = rides.map((r) => r.id);
+
+    if (rideIds.length) {
+      await prisma.pool_members.deleteMany({ where: { ride_request_id: { in: rideIds } } });
+      await prisma.ride_status_history.deleteMany({ where: { ride_request_id: { in: rideIds } } });
+      await prisma.ride_requests.deleteMany({ where: { id: { in: rideIds } } });
+    }
   }
+
   await prisma.users.deleteMany({
     where: { email: { in: [PASSENGER_ONE_EMAIL, PASSENGER_TWO_EMAIL, DRIVER_EMAIL] } },
   });
@@ -73,7 +81,7 @@ describe('Ride requests', () => {
       });
 
     expect(res.statusCode).toBe(201);
-    expect(res.body.data.ride.status).toBe('requested');
+    expect(res.body.data.ride.status).toBe('matched');
     expect(Number(res.body.data.ride.estimated_fare_paisa)).toBeGreaterThan(0);
     createdRideId = res.body.data.ride.id;
   });

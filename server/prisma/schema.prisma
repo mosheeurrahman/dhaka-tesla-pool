@@ -46,7 +46,7 @@ model pool_members {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model pools {
   id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  vehicle_id         String         @unique(map: "one_active_pool_per_vehicle", where: raw("(status <> ALL (ARRAY['completed'::pool_status, 'cancelled'::pool_status]))")) @db.Uuid
+  vehicle_id         String?        @unique(map: "one_active_pool_per_vehicle", where: raw("(status <> ALL (ARRAY['completed'::pool_status, 'cancelled'::pool_status]))")) @db.Uuid
   capacity_snapshot  Int            @db.SmallInt
   status             pool_status    @default(open)
   created_at         DateTime       @default(now()) @db.Timestamptz(6)
@@ -58,7 +58,7 @@ model pools {
   updated_at         DateTime       @default(now()) @db.Timestamptz(6)
   current_stop_index Int            @default(0)
   pool_members       pool_members[]
-  vehicles           vehicles       @relation(fields: [vehicle_id], references: [id], map: "fk_pool_vehicle")
+  vehicles           vehicles?      @relation(fields: [vehicle_id], references: [id], onDelete: Restrict, map: "fk_pool_vehicle")
 
   @@index([status], map: "idx_pools_status")
   @@index([vehicle_id], map: "idx_pools_vehicle")

@@ -83,7 +83,7 @@ export default function RequestRide() {
   return (
     <main className="min-h-screen">
       <Nav />
-      <section className="max-w-lg mx-auto px-6 py-10">
+      <section className="max-w-2xl mx-auto px-6 py-10">
         <h1 className="font-display text-3xl font-bold text-rickshaw-green text-center mb-2">
           Where's Bullet taking you?
         </h1>

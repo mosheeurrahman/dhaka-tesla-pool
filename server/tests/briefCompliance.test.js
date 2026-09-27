@@ -88,10 +88,14 @@ describe('Brief 12: invalid state transitions are rejected', () => {
       .send({ pickup_zone_id: banani.id, destination_zone_id: mohakhali.id });
     const rideId = rideRes.body.data.ride.id;
 
-    const poolsRes = await request(app)
-      .get('/api/v1/pools/mine')
+    const openRes = await request(app)
+      .get('/api/v1/pools/open')
       .set('Authorization', `Bearer ${driverToken}`);
-    const poolId = poolsRes.body.data.pools[0].id;
+    const openPool = openRes.body.data.pools.find((p) =>
+      p.members.some((m) => m.ride_request_id === rideId)
+    );
+    const poolId = openPool.pool.id;
+
 
     await request(app).patch(`/api/v1/pools/${poolId}/accept`).set('Authorization', `Bearer ${driverToken}`);
     await request(app).patch(`/api/v1/pools/${poolId}/arrived`).set('Authorization', `Bearer ${driverToken}`);

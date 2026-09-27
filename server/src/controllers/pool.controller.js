@@ -2,6 +2,16 @@ const poolService = require('../services/pool.service');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendSuccess } = require('../utils/ApiResponse');
 
+const getOpenPools = asyncHandler(async (req, res) => {
+  const pools = await poolService.listOpenPoolsForDrivers();
+  sendSuccess(res, 200, { pools }, 'Available ride requests');
+});
+
+const acceptPool = asyncHandler(async (req, res) => {
+  const pool = await poolService.acceptOpenPool(req.user.id, req.params.id);
+  sendSuccess(res, 200, { pool }, 'Ride accepted');
+});
+
 const getMyPools = asyncHandler(async (req, res) => {
   const pools = await poolService.listPoolsForDriver(req.user.id, req.query.status);
   sendSuccess(res, 200, { pools }, 'Your pools');
@@ -15,11 +25,6 @@ const getPoolById = asyncHandler(async (req, res) => {
 const getCombinedRoute = asyncHandler(async (req, res) => {
   const route = await poolService.getCombinedRoute(req.params.id);
   sendSuccess(res, 200, { route }, 'Combined route');
-});
-
-const acceptPool = asyncHandler(async (req, res) => {
-  const pool = await poolService.acceptPool(req.user.id, req.params.id);
-  sendSuccess(res, 200, { pool }, 'Pool accepted');
 });
 
 const markDriverArrived = asyncHandler(async (req, res) => {
@@ -48,10 +53,11 @@ const cancelPool = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  getOpenPools,
+  acceptPool,
   getMyPools,
   getPoolById,
   getCombinedRoute,
-  acceptPool,
   markDriverArrived,
   startPool,
   advanceStop,

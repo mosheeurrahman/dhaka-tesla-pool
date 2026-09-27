@@ -8,7 +8,12 @@ const router = express.Router();
 
 router.use(authenticate, authorize('driver'));
 
+// IMPORTANT: '/open' and '/mine' MUST be registered before '/:id', or
+// Express matches them as the :id param and tries to validate "open"/"mine"
+// as a UUID, failing with a 400 before ever reaching the real handler.
+router.get('/open', controller.getOpenPools);
 router.get('/mine', validate(poolHistoryQuerySchema), controller.getMyPools);
+
 router.get('/:id', validate(poolIdParamSchema), controller.getPoolById);
 router.get('/:id/combined-route', validate(poolIdParamSchema), controller.getCombinedRoute);
 router.patch('/:id/accept', validate(poolIdParamSchema), controller.acceptPool);

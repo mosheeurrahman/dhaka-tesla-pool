@@ -193,8 +193,9 @@ CREATE TABLE IF NOT EXISTS ride_requests (
 
 CREATE TABLE IF NOT EXISTS pools (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    vehicle_id UUID NOT NULL,
+    vehicle_id UUID,
     capacity_snapshot SMALLINT NOT NULL,
+    current_stop_index SMALLINT NOT NULL DEFAULT 0,
     status pool_status NOT NULL DEFAULT 'open',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     accepted_at TIMESTAMPTZ,
@@ -699,3 +700,14 @@ VALUES
     ('MIRPUR10', 'Mirpur 10'),
     ('MOHAMMADPUR', 'Mohammadpur')
 ON CONFLICT (code) DO NOTHING;
+
+UPDATE zones SET latitude = 3,    longitude = 11.5 WHERE code = 'UTTARA';
+UPDATE zones SET latitude = 2.5,  longitude = 6.2  WHERE code = 'MIRPUR10';
+UPDATE zones SET latitude = 0.5,  longitude = 2.5  WHERE code = 'MOHAMMADPUR';
+UPDATE zones SET latitude = 2.5,  longitude = 0.5  WHERE code = 'DHAHANMANDI';
+UPDATE zones SET latitude = 5,    longitude = 1.5  WHERE code = 'FARMGATE';
+UPDATE zones SET latitude = 11.5, longitude = 2    WHERE code = 'BRACU';
+UPDATE zones SET latitude = 10.5, longitude = 3    WHERE code = 'GULSHAN1';
+UPDATE zones SET latitude = 11,   longitude = 4    WHERE code = 'GULSHAN2';
+UPDATE zones SET latitude = 9,    longitude = 5.5  WHERE code = 'BANANI';
+UPDATE zones SET latitude = 9,    longitude = 3.5  WHERE code = 'MOHAKHALI';
