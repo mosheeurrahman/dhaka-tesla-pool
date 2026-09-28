@@ -23,7 +23,7 @@ const getPoolById = asyncHandler(async (req, res) => {
 });
 
 const getCombinedRoute = asyncHandler(async (req, res) => {
-  const route = await poolService.getCombinedRoute(req.params.id);
+  const route = await poolService.getCombinedRouteForDriver(req.user.id, req.params.id);
   sendSuccess(res, 200, { route }, 'Combined route');
 });
 

@@ -110,4 +110,20 @@ describe('Open ride requests: visible to all drivers, locked only on accept', ()
 
     expect(poolA.pool.id).not.toBe(poolB.pool.id); // must be two SEPARATE pools, not merged
   });
+
+  it('lets a new overlapping ride join an already-accepted pool without breaking the lifecycle', async () => {
+    const gulshan2 = await prisma.zones.findUnique({ where: { code: 'GULSHAN2' } });
+
+    const rideRes = await request(app)
+      .post('/api/v1/rides')
+      .set('Authorization', `Bearer ${passengerToken}`)
+      .send({ pickup_zone_id: gulshan1.id, destination_zone_id: gulshan2.id });
+    expect(rideRes.statusCode).toBe(201);
+    expect(rideRes.body.data.ride.status).toBe('accepted');
+
+    const arrived = await request(app)
+      .patch(`/api/v1/pools/${poolId}/arrived`)
+      .set('Authorization', `Bearer ${driverTwoToken}`);
+    expect(arrived.statusCode).toBe(200);
+  });
 });

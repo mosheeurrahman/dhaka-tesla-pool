@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
@@ -23,6 +24,7 @@ const STATUS_STYLE = {
 export default function DriverDashboard() {
   const { user, loading } = useRequireAuth("driver");
   const { token } = useAuth();
+   const router = useRouter();
 
   const [vehicle, setVehicle] = useState(null);
   const [vehicleForm, setVehicleForm] = useState({ name: "Bullet", model: "", plate_number: "" });
@@ -98,11 +100,10 @@ export default function DriverDashboard() {
     setError("");
     try {
       await api.acceptPool(poolId, token);
-      await Promise.all([refresh(), refreshOpenPools()]);
+      router.push(`/driver/pools/${poolId}`);
     } catch (err) {
       setError(err.message);
       await refreshOpenPools();
-    } finally {
       setBusy(false);
     }
   }
@@ -151,7 +152,7 @@ export default function DriverDashboard() {
             {isOnline ? "Online" : "Offline"} — tap to toggle
           </button>
           <p className="text-xs text-ink/40 mt-2">
-            Passengers are matched to you automatically once you're online.
+            Passengers are grouped automatically. Accept a request below to take the ride.
           </p>
         </div>
 
@@ -239,7 +240,7 @@ export default function DriverDashboard() {
         {activePools.length === 0 && (
           <div className="text-center py-10">
             <RockingBullet className="w-24 h-24 mx-auto mb-4 opacity-70" />
-            <p className="text-ink/50">No passengers matched yet. Go online and wait for a match.</p>
+            <p className="text-ink/50">No active rides yet. Accept a request above to get started.</p>
           </div>
         )}
 

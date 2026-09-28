@@ -5,13 +5,14 @@ import { useParams } from "next/navigation";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { RIDE_STATUS_LABELS, RIDE_STATUS_PROGRESS, formatPaisa } from "@/lib/rideStatus";
 import Nav from "@/components/layout/Nav";
 import Button from "@/components/ui/Button";
 import JourneyRoad from "@/components/ride/JourneyRoad";
 import SuccessBurst from "@/components/ui/SuccessBurst";
-import { RIDE_STATUS_LABELS, RIDE_STATUS_PROGRESS, formatPaisa } from "@/lib/rideStatus";
 import DhakaMap, { PATH_COLORS } from "@/components/map/DhakaMap";
 import PathLegendCard from "@/components/map/PathLegendCard";
+import StopsTimeline from "@/components/map/StopsTimeline";
 
 const TERMINAL_STATUSES = ["completed", "cancelled"];
 const CANCELLABLE = ["requested", "matched", "accepted", "driver_arrived"];
@@ -24,12 +25,11 @@ export default function RideDetail() {
   const [ride, setRide] = useState(null);
   const [payment, setPayment] = useState(null);
   const [zones, setZones] = useState([]);
+  const [graph, setGraph] = useState(null);
+  const [routeInfo, setRouteInfo] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [justPaid, setJustPaid] = useState(false);
-
-  const [graph, setGraph] = useState(null);
-  const [routeInfo, setRouteInfo] = useState(null);
 
   const fetchRide = useCallback(async () => {
     try {
@@ -88,6 +88,18 @@ export default function RideDetail() {
   const pickupName = zones.find((z) => z.id === ride.pickup_zone_id)?.name;
   const destinationName = zones.find((z) => z.id === ride.destination_zone_id)?.name;
 
+  const members = routeInfo?.poolMembers || [];
+  const progress = routeInfo?.progress;
+  const paths = members.length
+    ? members.map((m, i) => ({
+        codes: m.path,
+        color: PATH_COLORS[i % PATH_COLORS.length],
+        label: m.is_you ? `${m.passenger_name} (You)` : m.passenger_name,
+      }))
+    : routeInfo?.ownPath?.length
+    ? [{ codes: routeInfo.ownPath, color: PATH_COLORS[0], label: "You" }]
+    : [];
+
   return (
     <main className="min-h-screen">
       <Nav />
@@ -103,49 +115,8 @@ export default function RideDetail() {
           muted={ride.status === "cancelled"}
         />
 
-        {graph && routeInfo && (
-          <div className="mt-6">
-            <DhakaMap
-              graph={graph}
-              vehiclePosition={routeInfo.progress?.vehiclePosition}
-              paths={[
-                { codes: routeInfo.ownPath, color: PATH_COLORS[0], label: "You" },
-                ...routeInfo.poolMembers
-                  .filter((m) => m.passenger_name) // exclude self if API ever includes it
-                  .map((m, i) => ({
-                    codes: m.path,
-                    color: PATH_COLORS[(i + 1) % PATH_COLORS.length],
-                    label: m.passenger_name,
-                  })),
-              ]}
-            />
-
-            {routeInfo.poolMembers.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <PathLegendCard
-                  label="You"
-                  color={PATH_COLORS[0]}
-                  pathNames={zones.length ? routeInfo.ownPath.map((code) => zones.find((z) => z.code === code)?.name || code) : routeInfo.ownPath}
-                  distanceKm={null}
-                  farePaisa={null}
-                />
-                {routeInfo.poolMembers.map((m, i) => (
-                  <PathLegendCard
-                    key={m.pool_member_id}
-                    label={m.passenger_name}
-                    color={PATH_COLORS[(i + 1) % PATH_COLORS.length]}
-                    pathNames={m.path_names}
-                    distanceKm={m.distance_km}
-                    farePaisa={m.agreed_fare_paisa}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="flex justify-between items-center mt-8 border-t-2 border-rickshaw-green/10 pt-5">
-          <span className="text-ink/60">Fare</span>
+        <div className="flex justify-between items-center mt-6 border-t-2 border-rickshaw-green/10 pt-5">
+          <span className="text-ink/60">Your fare</span>
           <span className="font-display text-xl font-bold text-rickshaw-red">
             {formatPaisa(ride.final_fare_paisa ?? ride.estimated_fare_paisa)}
           </span>
@@ -156,6 +127,39 @@ export default function RideDetail() {
             <p className="font-display font-semibold text-rickshaw-green">
               You're riding with {ride.poolmates.join(" & ")}!
             </p>
+          </div>
+        )}
+
+        {graph && routeInfo && ride.status !== "cancelled" && paths.length > 0 && (
+          <div className="mt-6">
+            <DhakaMap
+              graph={graph}
+              paths={paths}
+              spine={progress?.spine || []}
+              vehiclePosition={progress?.vehiclePosition}
+            />
+
+            {progress && progress.events.length > 0 && (
+              <StopsTimeline
+                graph={graph}
+                events={progress.events}
+                currentStopIndex={progress.currentStopIndex}
+                active={["driver_arrived", "started"].includes(progress.poolStatus)}
+              />
+            )}
+
+            <div className="mt-4 space-y-2">
+              {members.map((m, i) => (
+                <PathLegendCard
+                  key={m.pool_member_id}
+                  label={m.is_you ? `${m.passenger_name} (You)` : m.passenger_name}
+                  color={PATH_COLORS[i % PATH_COLORS.length]}
+                  pathNames={m.path_names}
+                  distanceKm={m.distance_km}
+                  farePaisa={m.agreed_fare_paisa}
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -171,12 +175,8 @@ export default function RideDetail() {
           <div className="mt-6 border-2 border-marigold/40 rounded-2xl p-4 text-center">
             <p className="font-display font-semibold mb-3">You've arrived! How would you like to pay?</p>
             <div className="flex gap-3 justify-center">
-              <Button onClick={() => handlePay("cash")} disabled={busy}>
-                Cash
-              </Button>
-              <Button variant="secondary" onClick={() => handlePay("teslapay")} disabled={busy}>
-                TeslaPay
-              </Button>
+              <Button onClick={() => handlePay("cash")} disabled={busy}>Cash</Button>
+              <Button variant="secondary" onClick={() => handlePay("teslapay")} disabled={busy}>TeslaPay</Button>
             </div>
           </div>
         )}

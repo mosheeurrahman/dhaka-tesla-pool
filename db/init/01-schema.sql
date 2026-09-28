@@ -395,14 +395,10 @@ DECLARE
     v_requested_seats INTEGER;
     v_pool_status pool_status;
 BEGIN
-
-    -- Transitions away from 'active' (completing/cancelling a
-    -- member) never claim seats, so there is nothing to check.
     IF NEW.status <> 'active' THEN
         RETURN NEW;
     END IF;
 
-    -- Row lock: makes the Nusrat-vs-Shirin last-seat race safe.
     SELECT capacity_snapshot, status
     INTO v_pool_capacity, v_pool_status
     FROM pools
@@ -413,17 +409,12 @@ BEGIN
         RAISE EXCEPTION 'Pool does not exist';
     END IF;
 
-    -- Only a brand-new membership needs the pool to be 'open'.
-    -- (An existing active row being adjusted, e.g. seats_allocated,
-    -- doesn't need to re-check pool-openness.)
-    IF TG_OP = 'INSERT' AND v_pool_status <> 'open' THEN
+    IF TG_OP = 'INSERT' AND v_pool_status NOT IN ('open', 'accepted') THEN
         RAISE EXCEPTION 'Cannot add a passenger to a pool that is not open';
     END IF;
 
-    SELECT seats_requested
-    INTO v_requested_seats
-    FROM ride_requests
-    WHERE id = NEW.ride_request_id;
+    SELECT seats_requested INTO v_requested_seats
+    FROM ride_requests WHERE id = NEW.ride_request_id;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Ride request does not exist';
@@ -433,23 +424,15 @@ BEGIN
         RAISE EXCEPTION 'Allocated seats cannot exceed requested seats';
     END IF;
 
-    -- Sum seats held by OTHER active members only, excluding this
-    -- row by id, so it is never counted against itself.
-    SELECT COALESCE(SUM(seats_allocated), 0)
-    INTO v_current_seats
+    SELECT COALESCE(SUM(seats_allocated), 0) INTO v_current_seats
     FROM pool_members
-    WHERE pool_id = NEW.pool_id
-      AND status = 'active'
-      AND id <> NEW.id;
+    WHERE pool_id = NEW.pool_id AND status = 'active' AND id <> NEW.id;
 
     IF v_current_seats + NEW.seats_allocated > v_pool_capacity THEN
-        RAISE EXCEPTION
-            'Pool capacity exceeded. Available seats: %',
-            v_pool_capacity - v_current_seats;
+        RAISE EXCEPTION 'Pool capacity exceeded. Available seats: %', v_pool_capacity - v_current_seats;
     END IF;
 
     RETURN NEW;
-
 END;
 $$;
 
@@ -596,54 +579,64 @@ FOR EACH ROW EXECUTE FUNCTION mark_ride_matched_on_pool_join();
 
 CREATE OR REPLACE FUNCTION cascade_pool_status_to_members()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE
+    v_new_ride_status ride_status;
 BEGIN
-
     IF NEW.status = OLD.status THEN
         RETURN NEW;
     END IF;
 
     IF NEW.status IN ('accepted', 'driver_arrived', 'started') THEN
 
+        v_new_ride_status := NEW.status::text::ride_status;
+
+        -- Riders who joined after acceptance may still be 'matched'. Bring them
+        -- up to 'accepted' first so the next step is a legal transition.
         UPDATE ride_requests
-        SET status = NEW.status
+        SET status = 'accepted'
         WHERE id IN (
             SELECT ride_request_id FROM pool_members
             WHERE pool_id = NEW.id AND status = 'active'
         )
-        AND status <> NEW.status;
+        AND status = 'matched';
+
+        IF NEW.status <> 'accepted' THEN
+            UPDATE ride_requests
+            SET status = v_new_ride_status
+            WHERE id IN (
+                SELECT ride_request_id FROM pool_members
+                WHERE pool_id = NEW.id AND status = 'active'
+            )
+            AND status <> v_new_ride_status;
+        END IF;
 
     ELSIF NEW.status = 'completed' THEN
 
-        UPDATE ride_requests
-        SET status = 'completed'
+        UPDATE ride_requests SET status = 'completed'
         WHERE id IN (
             SELECT ride_request_id FROM pool_members
             WHERE pool_id = NEW.id AND status = 'active'
         )
         AND status <> 'completed';
 
-        UPDATE pool_members
-        SET status = 'completed'
+        UPDATE pool_members SET status = 'completed'
         WHERE pool_id = NEW.id AND status = 'active';
 
     ELSIF NEW.status = 'cancelled' THEN
 
-        UPDATE ride_requests
-        SET status = 'cancelled'
+        UPDATE ride_requests SET status = 'cancelled'
         WHERE id IN (
             SELECT ride_request_id FROM pool_members
             WHERE pool_id = NEW.id AND status = 'active'
         )
         AND status NOT IN ('completed', 'cancelled');
 
-        UPDATE pool_members
-        SET status = 'cancelled'
+        UPDATE pool_members SET status = 'cancelled'
         WHERE pool_id = NEW.id AND status = 'active';
 
     END IF;
 
     RETURN NEW;
-
 END;
 $$;
 
@@ -694,7 +687,7 @@ VALUES
     ('MOHAKHALI', 'Mohakhali'),
     ('GULSHAN1', 'Gulshan 1'),
     ('GULSHAN2', 'Gulshan 2'),
-    ('DHAKA_UNIVERSITY', 'Dhaka University'),
+    ('BRACU', 'BRAC University'),
     ('DHAHANMANDI', 'Dhanmondi'),
     ('UTTARA', 'Uttara'),
     ('FARMGATE', 'Farmgate'),

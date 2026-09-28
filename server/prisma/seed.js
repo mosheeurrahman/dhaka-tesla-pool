@@ -10,23 +10,25 @@ async function main() {
 
   // --- Zones (upsert: safe to re-run, won't duplicate) ---
   const zoneSeed = [
-    { code: 'BANANI', name: 'Banani' },
-    { code: 'MOHAKHALI', name: 'Mohakhali' },
-    { code: 'GULSHAN1', name: 'Gulshan 1' },
-    { code: 'GULSHAN2', name: 'Gulshan 2' },
-    { code: 'BRACU', name: 'BRAC University' },
-    { code: 'DHAHANMANDI', name: 'Dhanmondi' },
-    { code: 'UTTARA', name: 'Uttara' },
-    { code: 'FARMGATE', name: 'Farmgate' },
-    { code: 'MIRPUR10', name: 'Mirpur 10' },
-    { code: 'MOHAMMADPUR', name: 'Mohammadpur' },
+    { code: 'UTTARA', name: 'Uttara', latitude: 3, longitude: 11.5 },
+    { code: 'MIRPUR10', name: 'Mirpur 10', latitude: 2.5, longitude: 6.2 },
+    { code: 'MOHAMMADPUR', name: 'Mohammadpur', latitude: 0.5, longitude: 2.5 },
+    { code: 'DHAHANMANDI', name: 'Dhanmondi', latitude: 2.5, longitude: 0.5 },
+    { code: 'FARMGATE', name: 'Farmgate', latitude: 5, longitude: 1.5 },
+    { code: 'BRACU', name: 'BRAC University', latitude: 11.5, longitude: 2 },
+    { code: 'GULSHAN1', name: 'Gulshan 1', latitude: 10.5, longitude: 3 },
+    { code: 'GULSHAN2', name: 'Gulshan 2', latitude: 11, longitude: 4 },
+    { code: 'BANANI', name: 'Banani', latitude: 9, longitude: 5.5 },
+    { code: 'MOHAKHALI', name: 'Mohakhali', latitude: 9, longitude: 3.5 },
   ];
+
+  await prisma.zones.deleteMany({ where: { code: 'DHAKA_UNIVERSITY' } });
 
   const zones = {};
   for (const z of zoneSeed) {
     const zone = await prisma.zones.upsert({
       where: { code: z.code },
-      update: { name: z.name },
+      update: { name: z.name, latitude: z.latitude, longitude: z.longitude },
       create: z,
     });
     zones[z.code] = zone;

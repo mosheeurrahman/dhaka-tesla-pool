@@ -1,7 +1,7 @@
 export const RIDE_STATUS_LABELS = {
   requested: "Looking for a Tesla...",
-  matched: "Finding a seat...",
-  accepted: "Tesla found! Matching your route...",
+  matched: "Matched! Waiting for a driver to accept...",
+  accepted: "A driver accepted your ride!",
   driver_arrived: "Your Tesla has arrived",
   started: "On the way",
   completed: "You've arrived!",

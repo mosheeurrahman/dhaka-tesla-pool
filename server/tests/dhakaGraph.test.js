@@ -46,4 +46,12 @@ describe('dhakaGraph - tryMergePath (single-line matching)', () => {
     const merged = require('../src/data/dhakaGraph').tryMergePath(spine, candidate);
     expect(merged).toEqual(spine);
   });
+
+  it('rejects a candidate travelling the opposite direction along the same road', () => {
+    const merged = require('../src/data/dhakaGraph').tryMergePath(
+      ['MOHAKHALI', 'GULSHAN1'],
+      ['GULSHAN1', 'MOHAKHALI']
+    );
+    expect(merged).toBeNull();
+  });
 });

@@ -121,9 +121,7 @@ async function cancelRide(id, passengerId) {
     data: { status: 'cancelled' },
   });
 
-  // If this ride was already matched into a pool, free its specific seat
-  // too - otherwise the pool would still show a cancelled passenger as an
-  // active member and their seat would stay wrongly reserved.
+  // Free this rider's seat, then rebuild the route (or close the pool if empty).
   const membership = await prisma.pool_members.findFirst({
     where: { ride_request_id: id, status: 'active' },
   });
@@ -132,6 +130,7 @@ async function cancelRide(id, passengerId) {
       where: { id: membership.id },
       data: { status: 'cancelled', cancelled_at: new Date() },
     });
+    await poolService.handleMemberLeft(membership.pool_id);
   }
 
   await logStatusHistory(id, 'cancelled', passengerId, 'Ride cancelled by passenger');

@@ -105,40 +105,28 @@ function findContiguousSublistIndex(haystack, needle) {
 }
 
 // Determines whether `candidate` (a passenger's pickup->destination path)
-// can be merged into `spine` (the vehicle's current combined route) to
-// form ONE longer simple path with no revisited nodes - i.e. a single
-// straight line the vehicle can actually drive without doubling back or
-// forking. Returns the merged path (array of zone codes) if compatible,
-// or null if the routes fork and cannot share one vehicle.
+// can be merged into `spine` (the vehicle's combined route) to form ONE
+// longer simple path in the SAME direction of travel: no forking, no
+// revisited nodes, no passenger travelling against the vehicle.
 function tryMergePath(spine, candidate) {
   if (!spine || spine.length === 0) return candidate;
 
-  const orientations = [candidate, [...candidate].reverse()];
+  if (findContiguousSublistIndex(spine, candidate) !== -1) return spine;
+  if (findContiguousSublistIndex(candidate, spine) !== -1) return candidate;
 
-  for (const c of orientations) {
-    // candidate already lies entirely within the existing spine
-    if (findContiguousSublistIndex(spine, c) !== -1) return spine;
-    // the existing spine lies entirely within the candidate (candidate supersedes it)
-    if (findContiguousSublistIndex(c, spine) !== -1) return c;
-
-    // spine's tail overlaps candidate's head - extend forward
-    for (let overlap = Math.min(spine.length, c.length); overlap >= 1; overlap--) {
-      const spineSuffix = spine.slice(spine.length - overlap);
-      const cPrefix = c.slice(0, overlap);
-      if (arraysEqual(spineSuffix, cPrefix)) {
-        const merged = spine.concat(c.slice(overlap));
-        if (!hasDuplicates(merged)) return merged;
-      }
+  // spine's tail overlaps candidate's head - extend forward
+  for (let overlap = Math.min(spine.length, candidate.length); overlap >= 1; overlap--) {
+    if (arraysEqual(spine.slice(spine.length - overlap), candidate.slice(0, overlap))) {
+      const merged = spine.concat(candidate.slice(overlap));
+      if (!hasDuplicates(merged)) return merged;
     }
+  }
 
-    // candidate's tail overlaps spine's head - extend backward
-    for (let overlap = Math.min(spine.length, c.length); overlap >= 1; overlap--) {
-      const cSuffix = c.slice(c.length - overlap);
-      const spinePrefix = spine.slice(0, overlap);
-      if (arraysEqual(cSuffix, spinePrefix)) {
-        const merged = c.slice(0, c.length - overlap).concat(spine);
-        if (!hasDuplicates(merged)) return merged;
-      }
+  // candidate's tail overlaps spine's head - extend backward
+  for (let overlap = Math.min(spine.length, candidate.length); overlap >= 1; overlap--) {
+    if (arraysEqual(candidate.slice(candidate.length - overlap), spine.slice(0, overlap))) {
+      const merged = candidate.slice(0, candidate.length - overlap).concat(spine);
+      if (!hasDuplicates(merged)) return merged;
     }
   }
 
