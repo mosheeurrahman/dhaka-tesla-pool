@@ -30,6 +30,13 @@ async function recalculateFaresForPool(poolId) {
   }
 }
 
+// The database trigger is the referee for seats. If we lose a race for the
+// last seat, that is not an error for the rider: try the next group instead.
+function isSeatConflict(err) {
+  const text = `${err?.message || ''} ${err?.meta?.driverAdapterError?.message || ''}`;
+  return text.includes('Pool capacity exceeded') || text.includes('not open');
+}
+
 // MATCHING RULE: passengers share a vehicle only if all their pickup->destination
 // paths merge into ONE straight line travelling in ONE direction (see tryMergePath).
 async function autoMatchRide(ride) {
@@ -51,14 +58,19 @@ async function autoMatchRide(ride) {
     const merged = dhakaGraph.tryMergePath(Array.isArray(pool.spine) ? pool.spine : [], route.path);
     if (!merged) continue;
 
-    await prisma.pool_members.create({
-      data: {
-        pool_id: pool.id,
-        ride_request_id: ride.id,
-        seats_allocated: ride.seats_requested,
-        agreed_fare_paisa: 0,
-      },
-    });
+    try {
+      await prisma.pool_members.create({
+        data: {
+          pool_id: pool.id,
+          ride_request_id: ride.id,
+          seats_allocated: ride.seats_requested,
+          agreed_fare_paisa: 0,
+        },
+      });
+    } catch (err) {
+      if (isSeatConflict(err)) continue;
+      throw err;
+    }
 
     // The DB trigger just set the ride to 'matched'. If a driver already
     // accepted this pool, the new rider must be 'accepted' too, otherwise

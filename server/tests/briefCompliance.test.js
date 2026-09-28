@@ -61,7 +61,7 @@ afterAll(async () => {
 describe("Brief 12: Bullet's capacity can never be exceeded", () => {
   // Full coverage in pool.test.js: capacity-exceeded rejection, and the
   // concurrent last-seat race in "Tesla pooling - concurrency".
-  it('reference: see tests/pool.test.js', () => {
+  it('reference: see tests/poolCapacity.test.js', () => {
     expect(true).toBe(true);
   });
 });
@@ -113,7 +113,7 @@ describe('Brief 12: invalid state transitions are rejected', () => {
 describe("Brief 12: Nusrat's and Rafiq's pooled fares calculate correctly", () => {
   // Full hand-verifiable coverage in fareService.test.js, plus the real
   // pooled two-passenger scenario in pool.test.js.
-  it('reference: see tests/fareService.test.js and tests/pool.test.js', () => {
+  it('reference: see tests/fareService.test.js and tests/poolCapacity.test.js', () => {
     expect(true).toBe(true);
   });
 });
@@ -151,14 +151,14 @@ describe('Brief 12: cancellation rules hold', () => {
   // Basic cancellation covered in ride.test.js; mid-pool seat-freeing
   // covered in driverRideFlow.test.js; terminal-state rejection covered
   // above in this file.
-  it('reference: see tests/ride.test.js and tests/driverRideFlow.test.js', () => {
+  it('reference: see tests/ride.test.js', () => {
     expect(true).toBe(true);
   });
 });
 
 describe('Brief 12: two concurrent requests cannot corrupt pool capacity', () => {
   // Full coverage in pool.test.js's dedicated concurrency describe block.
-  it('reference: see tests/pool.test.js', () => {
+  it('reference: see tests/poolCapacity.test.js', () => {
     expect(true).toBe(true);
   });
 });

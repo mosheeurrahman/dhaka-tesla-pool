@@ -24,4 +24,9 @@ describe('fare.service - calculateFare (hand-verifiable)', () => {
     expect(fare.distanceChargePaisa).toBe(6000); // 1500 * 2 * 2
     expect(fare.totalFarePaisa).toBe(9000); // 3000 + 6000
   });
+
+  it('matches the README example: Nusrat (1.5 km) and Rafiq (1.7 km) pooled', () => {
+    expect(fareService.calculateFare({ distanceKm: 1.5, seatsRequested: 1, isPooled: true }).totalFarePaisa).toBe(4200);
+    expect(fareService.calculateFare({ distanceKm: 1.7, seatsRequested: 1, isPooled: true }).totalFarePaisa).toBe(4440);
+  });
 });
