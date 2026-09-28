@@ -44,7 +44,6 @@ async function main() {
   await prisma.ride_requests.deleteMany({});
   await prisma.vehicles.deleteMany({});
   await prisma.users.deleteMany({});
-  await prisma.zones.deleteMany({ where: { code: 'DHAKA_UNIVERSITY' } });
   console.log('  Cleared previous demo transactional data');
 
   // --- Story cast: drivers ---
@@ -130,6 +129,34 @@ async function main() {
   });
 
   console.log('  Users ready: Jashim, Kuddus (drivers), Nusrat, Rafiq, Shirin, Moshee-Ur, Mehek, Alice (passengers)');
+
+  // --- Story cast: vehicles ---
+  await prisma.vehicles.create({
+    data: {
+      driver_id: jashim.id,
+      name: 'Bullet',
+      make: 'Tesla',
+      model: 'Model 3 (unofficial)',
+      plate_number: 'DHAKA-TESLA-01',
+      capacity: 3,
+      status: 'active',
+    },
+  });
+  console.log('  Vehicle ready: Bullet (Jashim)');
+
+  await prisma.vehicles.create({
+    data: {
+      driver_id: kuddus.id,
+      name: 'Thunder',
+      make: 'Tesla',
+      model: 'Model Y (unofficial)',
+      plate_number: 'DHAKA-TESLA-02',
+      capacity: 3,
+      status: 'active',
+    },
+  });
+  console.log('  Vehicle ready: Thunder (Kuddus)');
+
   console.log('\nSeed complete. Demo login password for all users: ' + DEMO_PASSWORD);
 }
 
