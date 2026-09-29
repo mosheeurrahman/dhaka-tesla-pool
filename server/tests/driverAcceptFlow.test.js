@@ -45,6 +45,8 @@ beforeAll(async () => {
 
   await request(app).post('/api/v1/vehicles').set('Authorization', `Bearer ${driverOneToken}`).send({ name: 'Bullet1', model: 'Model 3', plate_number: 'TEST-D1', capacity: 3 });
   await request(app).post('/api/v1/vehicles').set('Authorization', `Bearer ${driverTwoToken}`).send({ name: 'Bullet2', model: 'Model 3', plate_number: 'TEST-D2', capacity: 3 });
+  await request(app).patch('/api/v1/drivers/status').set('Authorization', `Bearer ${driverOneToken}`).send({ is_online: true });
+  await request(app).patch('/api/v1/drivers/status').set('Authorization', `Bearer ${driverTwoToken}`).send({ is_online: true });
 });
 
 afterAll(async () => {

@@ -60,6 +60,10 @@ beforeAll(async () => {
     .post('/api/v1/vehicles')
     .set('Authorization', `Bearer ${tokens.driver}`)
     .send({ name: 'Bullet', model: 'Model 3', plate_number: 'TEST-CAPACITY-01', capacity: 3 });
+  await request(app)
+    .patch('/api/v1/drivers/status')
+    .set('Authorization', `Bearer ${tokens.driver}`)
+    .send({ is_online: true });
 
   const founder = await requestRide(tokens.rafiq, zones.MOHAKHALI, zones.GULSHAN1, 2);
   const membership = await prisma.pool_members.findFirst({

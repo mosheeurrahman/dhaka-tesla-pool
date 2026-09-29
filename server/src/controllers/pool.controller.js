@@ -3,7 +3,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { sendSuccess } = require('../utils/ApiResponse');
 
 const getOpenPools = asyncHandler(async (req, res) => {
-  const pools = await poolService.listOpenPoolsForDrivers();
+  const pools = await poolService.listOpenPoolsForDrivers(req.user.id);
   sendSuccess(res, 200, { pools }, 'Available ride requests');
 });
 

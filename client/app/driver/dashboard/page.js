@@ -142,15 +142,29 @@ export default function DriverDashboard() {
         <div className="text-center mb-8">
           <h1 className="font-display text-3xl font-bold text-rickshaw-green">{vehicle.name}</h1>
           <p className="text-ink/60">{vehicle.model} · {vehicle.capacity} seats</p>
-          <button
-            onClick={toggleOnline}
-            disabled={busy}
-            className={`btn-press mt-4 px-6 py-2 rounded-full font-display font-semibold ${
-              isOnline ? "bg-rickshaw-green text-cream" : "bg-ink/10 text-ink/60"
-            }`}
-          >
-            {isOnline ? "Online" : "Offline"} — tap to toggle
-          </button>
+          <div className="flex items-center justify-center gap-3 mt-4">
+            <span className={`font-display font-semibold ${isOnline ? "text-ink/40" : "text-rickshaw-red"}`}>
+              Offline
+            </span>
+            <button
+              role="switch"
+              aria-checked={isOnline}
+              onClick={toggleOnline}
+              disabled={busy}
+              className={`relative w-14 h-8 rounded-full transition-colors duration-200 ${
+                isOnline ? "bg-rickshaw-green" : "bg-ink/20"
+              }`}
+            >
+              <span
+                className={`absolute top-1 left-1 w-6 h-6 bg-cream rounded-full shadow-md transition-transform duration-200 ${
+                  isOnline ? "translate-x-6" : "translate-x-0"
+                }`}
+              />
+            </button>
+            <span className={`font-display font-semibold ${isOnline ? "text-rickshaw-green" : "text-ink/40"}`}>
+              Online
+            </span>
+          </div>
           <p className="text-xs text-ink/40 mt-2">
             Passengers are grouped automatically. Accept a request below to take the ride.
           </p>
@@ -165,13 +179,19 @@ export default function DriverDashboard() {
           Visible to every online driver — first to accept gets it.
         </p>
 
-        {openPools.length === 0 && (
+        {!isOnline && (
+          <p className="text-center text-rickshaw-red py-6">
+            Please go online to see the available ride requests.
+          </p>
+        )}
+
+        {isOnline && openPools.length === 0 && (
           <p className="text-center text-ink/50 py-6">
             No unassigned requests right now.
           </p>
         )}
 
-        {openPools.map(({ pool, members }) => {
+        {isOnline && openPools.map(({ pool, members }) => {
           const expanded = expandedId === pool.id;
           const totalSeats = members.reduce(
             (sum, m) => sum + m.seats_allocated,

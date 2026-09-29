@@ -175,8 +175,13 @@ async function buildMemberDetails(members) {
   );
 }
 
-// Visible to EVERY driver. Looking at a group never locks it; only accepting does.
-async function listOpenPoolsForDrivers() {
+// Only online drivers may see or accept open groups. Offline drivers get an
+// empty list rather than a 403, so the frontend can show a calm "go online"
+// message instead of treating this as an error state.
+async function listOpenPoolsForDrivers(driverId) {
+  const driver = await prisma.users.findUnique({ where: { id: driverId } });
+  if (!driver || !driver.is_online) return [];
+
   const pools = await prisma.pools.findMany({
     where: { vehicle_id: null, status: 'open' },
     orderBy: { created_at: 'asc' },
@@ -185,7 +190,7 @@ async function listOpenPoolsForDrivers() {
   const result = [];
   for (const pool of pools) {
     const members = await prisma.pool_members.findMany({ where: { pool_id: pool.id, status: 'active' } });
-    if (members.length === 0) continue; // hide empty ghost groups
+    if (members.length === 0) continue;
     result.push({ pool, members: await buildMemberDetails(members) });
   }
   return result;
@@ -193,6 +198,11 @@ async function listOpenPoolsForDrivers() {
 
 // Atomic claim: only the first UPDATE that still sees vehicle_id = null wins.
 async function acceptOpenPool(driverId, poolId) {
+  const driver = await prisma.users.findUnique({ where: { id: driverId } });
+  if (!driver || !driver.is_online) {
+    throw new ApiError(400, 'Go online before accepting a ride');
+  }
+
   const vehicle = await prisma.vehicles.findFirst({ where: { driver_id: driverId, status: 'active' } });
   if (!vehicle) throw new ApiError(400, 'You need an active vehicle to accept a ride');
 
