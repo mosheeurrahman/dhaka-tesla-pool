@@ -8,7 +8,7 @@ Dhaka Tesla Pool is a ride-pooling web app for Dhaka. Passengers request a ride,
 |---|---|
 | **Live app** | https://dhk-tesla-pool.vercel.app/ |
 | **API** | https://dhaka-tesla-pool-tn1t.onrender.com/api/v1 |
-| **Demo video (6 min)** | https://drive.google.com/drive/folders/12QOptmr2XJHMqqB3Q7w84XNf337QSCy_?usp=sharing |
+| **Demo video (6 min)** | https://youtu.be/UxW8jUHLrZo?si=ZqiWpuhJSgu-yBKk |
 
 > **Heads-up:** the API runs on Render's free tier. After 15 minutes idle it sleeps, and the first request can take about a minute to wake it. The demo data is re-seeded on every wake-up, so the app always starts in a clean, known state.
 
